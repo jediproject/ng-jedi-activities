@@ -1,6 +1,6 @@
 'use strict';
 
-define([angular], function(){
+define(['angular'], function(){
 
 	angular.module('jedi.download', []);
 
@@ -18,7 +18,7 @@ define([angular], function(){
 				downloadItem.status = 'error';
 			});
 		};
-	}]).directive('jdDownload', ['', function(){
+	}]).directive('jdDownload', [function(){
 
 		return{
 			restrict: 'E',
