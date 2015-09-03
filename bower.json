@@ -1,0 +1,30 @@
+{
+  "name": "ng-jedi-download",
+  "version": "0.0.0",
+  "homepage": "https://github.com/jediproject/ng-jedi-download",
+  "authors": [
+    "Fábio Henrique da Silva Viana <fabioviana.bh@gmail.com>"
+    "Mateus Cerqueira <mateus_mcg@icloud.com>"
+    "Henrique Silva Brighenti"
+    "Bruno Camodeco dos Santos"
+    "Tanato Cartaxo <tanatopc@gmail.com>"
+  ],
+  "description": "Easy way to make download requests.",
+  "main": "download.js",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "angular",
+    "download",
+    "service"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
