@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "homepage": "https://github.com/jediproject/ng-jedi-download",
   "authors": [
-    "Fábio Henrique da Silva Viana <fabioviana.bh@gmail.com>"
-    "Mateus Cerqueira <mateus_mcg@icloud.com>"
-    "Henrique Silva Brighenti"
-    "Bruno Camodeco dos Santos"
+    "Fábio Henrique da Silva Viana <fabioviana.bh@gmail.com>",
+    "Mateus Cerqueira <mateus_mcg@icloud.com>",
+    "Henrique Silva Brighenti",
+    "Bruno Camodeco dos Santos <brunocs@ciandt.com>",
     "Tanato Cartaxo <tanatopc@gmail.com>"
   ],
   "description": "Easy way to make download requests.",
