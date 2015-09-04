@@ -33,8 +33,8 @@
                         <div class="sk-circle11 sk-circle"></div>
                         <div class="sk-circle12 sk-circle"></div>
                     </div>
-                    <span class="activities-done glyphicon glyphicon-saved" ng-if="item.status == 'success'"></span>
-                    <span class="activities-error glyphicon glyphicon-remove" ng-if="item.status == 'error'"></span>
+                    <span class="activities-done glyphicon glyphicon-saved" ng-if="item.status == 'success'" ng-click="activitiesCtrl.successIconClick(item)"></span>
+                    <span class="activities-error glyphicon glyphicon-remove" ng-if="item.status == 'error'" ng-click="activitiesCtrl.errorIconClick(item)"></span>
                 </div>
             </div>
             <hr class="row activities-divider" />

@@ -1,19 +1,20 @@
 'use strict';
 
-define(['angular'], function () {
+define(['angular'], function() {
 
     angular.module('jedi.download', []);
 
     var downloadItems = [];
 
-    angular.module('jedi.download').service('jedi.download.DownloadService', ['$http', function ($http) {
-        this.initDownload = function (baseUrl, apiUrl, method, params, name) {
+    angular.module('jedi.download').service('jedi.download.DownloadService', ['$http', function($http) {
+        this.initDownload = function(baseUrl, apiUrl, method, params, name) {
 
-            var downloadItem = { name: name, status: 'progress' };
+            var downloadItem = {
+                name: name,
+                status: 'progress'
+            };
 
-            for (var i = 0; i < 20; i++) {
-                downloadItems.push(downloadItem);
-            }
+            downloadItems.push(downloadItem);
 
             var request = {
                 method: method.toUpperCase(),
@@ -21,36 +22,56 @@ define(['angular'], function () {
                 data: params
             };
 
-            $http(request).success(function (responseData) {
+            $http(request).success(function(responseData) {
                 downloadItem.status = 'success';
-            }).error(function (responseData) {
+            }).error(function(responseData) {
                 downloadItem.status = 'error';
             });
         };
-    }]).directive('jdDownload', [function () {
+    }]).directive('jdDownload', [function() {
 
         return {
             restrict: 'E',
             replace: true,
-            link: function (scope, element) {
+            link: function(scope, element) {
                 element.hide();
-                scope.$watch(function () {
-                    return downloadItems.length;
-                },
-                function (value) {
-                    if (value && value > 0) {
-                        element.show();
-                    }
-                });
+                scope.$watch(function() {
+                        return downloadItems.length;
+                    },
+                    function(value) {
+                        if (value && value > 0) {
+                            element.show();
+                        }
+                    });
 
-                scope.$on('$destroy', function () {
+                scope.$on('$destroy', function() {
                     element.remove();
                 });
             },
             controller: ['$scope', '$attrs', '$element', '$timeout', function Controller($scope, $attrs, $element, $timeout) {
-                $scope.downloadItems = downloadItems;
+                var vm = this;
+
+                vm.successIconClick = successIconClick;
+                vm.errorIconClick = errorIconClick;
+
+                initCtrl();
+
+                function initCtrl() {
+                    $scope.downloadItems = downloadItems;
+                }
+
+                function successIconClick(item) {
+                    console.log("clicked with item " + item.name);
+                }
+
+                function errorIconClick(item) {
+                    console.log("clicked with item " + item.name);
+                }
+
             }],
-            templateUrl: function (elem, attrs) {
+            controllerAs: 'activitiesCtrl',
+            bindToController: true,
+            templateUrl: function(elem, attrs) {
                 if (attrs.templateUrl) {
                     return attrs.templateUrl;
                 } else {
