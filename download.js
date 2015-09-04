@@ -19,7 +19,7 @@ define(['angular'], function () {
                 method: method.toUpperCase(),
                 url: baseUrl + '/' + apiUrl,
                 data: params
-            }
+            };
 
             $http(request).success(function (responseData) {
                 downloadItem.status = 'success';
@@ -37,11 +37,11 @@ define(['angular'], function () {
                 scope.$watch(function () {
                     return downloadItems.length;
                 },
-				function (value) {
-				    if (value && value > 0) {
-				        element.show();
-				    }
-				});
+                function (value) {
+                    if (value && value > 0) {
+                        element.show();
+                    }
+                });
 
                 scope.$on('$destroy', function () {
                     element.remove();
@@ -57,6 +57,6 @@ define(['angular'], function () {
                     return "assets/libs/ng-jedi-download/download.html";
                 }
             },
-        }
+        };
     }]);
 });
