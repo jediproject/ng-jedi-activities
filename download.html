@@ -1,8 +1,27 @@
-<div class="alert-center text-center animate-slide">
-   <table>
-     <th>Nome</th>
-     <tr ng-repeat="item in itens">
-       {{item.name}}
-     </tr>
-   </table>
+<div class="animate-slide panel-default">
+    <div class="panel-heading activities-header">
+        <div class="row">
+            <div class="col-md-9 pull-left">
+                <strong class="activities-header-content">
+                    <span class="glyphicon glyphicon-tasks"></span>
+                    Atividades
+                </strong>
+            </div>
+            <div class="col-md-3 pull-right">
+                <!--<span class="glyphicon glyphicon-remove"></span>-->
+            </div>
+        </div>
+    </div>
+    <div class="panel-body activities-scroll">
+        <div ng-repeat="item in downloadItems track by $index">
+            <div class="row">
+                <div class="col-md-10 activities-content">
+                    <span>{{item.name}}</span>
+                </div>
+                <div class="col-md-2 activities-spinner">
+                </div>
+            </div>
+            <hr class="row activities-divider" />
+        </div>
+    </div>
 </div>

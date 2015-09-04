@@ -1,31 +1,48 @@
 .animate-slide {
-  background:#30373f;
-  position:fixed;
-  width: 450px;
-  height:275px;
-  bottom: 0;
-  right:0;
+    background: #ffffff;
+    position: fixed;
+    width: 500px;
+    height: 180px;
+    bottom: 0;
+    right: 0;
+    z-index: 2001 !important;
+    box-shadow: -2px -2px 2px #808080;
 }
 
-.animate-slide.ng-hide-add,
-.animate-slide.ng-hide-remove {
- display:none;
-  -webkit-transition:0.5s linear all;
-  -moz-transition:0.5s linear all;
-  -o-transition:0.5s linear all;
-  transition:0.5s linear all;
+    .animate-slide .activities-header {
+        width: 100%;
+        background: #3975B9;
+        height: 30px;
+        padding: 8px 0px;
+        border-radius: 0px;
+    }
+
+.panel-heading .activities-header-content {
+    background: none !important;
 }
 
-.animate-slide.ng-hide-remove.ng-hide-remove-active {
-  -webkit-animation:0.5s slide-left;
-  animation:0.5s slide-left;
+.activities-scroll {
+    overflow: auto;
+    max-height: 148px;
 }
 
-.animate-slide.ng-hide-add.ng-hide-add-active {
-  -webkit-animation:0.5s slide-right;
-  animation:0.5s slide-right;
+.activities-scroll-inner {
+    height: 100%;
+    width: 100%;
+    overflow: auto;
 }
-.animate-slide.ng-hide {
-  right:-320px;
-  display:none;
+
+.activities-spinner {
+    background: url(../libs/ng-jedi-download/activity-loading.gif) center no-repeat;
+    background-size: 14px;
+    height: 30px;
+}
+
+.activities-divider {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.activities-content {
+    line-height: 30px;
 }
