@@ -1,15 +1,30 @@
 'use strict';
 
-define(['angular'], function() {
+define(['angular', 'angular-local-storage'], function() {
 
     angular.module('jedi.download', []);
 
     var downloadItems = [];
 
-    angular.module('jedi.download').service('jedi.download.DownloadService', ['$http', function($http) {
+    function guid() {
+      function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+                   .toString(16)
+                   .substring(1);
+      }
+      return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+        s4() + '-' + s4() + s4() + s4();
+    }
+
+    angular.module('jedi.download').service('jedi.download.DownloadService', ['$http', 'LocalStorageService', function($http, localStorageService) {
         this.initDownload = function(baseUrl, apiUrl, method, params, name) {
 
+           if (!localStorageService.get('downloads')) {
+             localStorageService.set('downloads', downloadItems)
+           }
+
             var downloadItem = {
+                downloadItem.id = guid(),
                 name: name,
                 status: 'progress'
             };
@@ -24,6 +39,7 @@ define(['angular'], function() {
 
             $http(request).success(function(responseData) {
                 downloadItem.status = 'success';
+                downloadItem.data = responseData;
             }).error(function(responseData) {
                 downloadItem.status = 'error';
             });
@@ -53,6 +69,7 @@ define(['angular'], function() {
 
                 vm.successIconClick = successIconClick;
                 vm.errorIconClick = errorIconClick;
+                vm.removeIconClick = removeIconClick;
 
                 initCtrl();
 
@@ -68,6 +85,10 @@ define(['angular'], function() {
                     console.log("clicked with item " + item.name);
                 }
 
+                function removeIconClick(index){
+                  console.console.log("removing item id: " + item.id);
+                  downloadItems.splice(index, 1);
+                }
             }],
             controllerAs: 'activitiesCtrl',
             bindToController: true,
