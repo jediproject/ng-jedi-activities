@@ -28,6 +28,7 @@
     "tests"
   ],
   "dependencies": {
-    "angular-local-storage": "~0.2.2"
+    "angular-local-storage": "~0.2.2",
+    "file-saver-saveas-js": "~1.20150507.2"
   }
 }

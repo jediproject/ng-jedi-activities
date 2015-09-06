@@ -56,6 +56,12 @@
     color: rgb(233, 66, 46);
 }
 
+.activities-trash{
+    padding-top: 8px;
+    font-size: 15px;
+    color: rgb(0, 0, 0);
+}
+
 /* Spinner code */
 .activities-spinner {
     margin: 5px auto auto auto;
