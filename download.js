@@ -19,13 +19,9 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
     angular.module('jedi.download').service('jedi.download.DownloadService', ['$http', 'localStorageService', function ($http, localStorageService) {
         this.initDownload = function (baseUrl, apiUrl, method, params, name) {
 
-            //if (!localStorageService.get('downloads')) {
-            //  localStorageService.set('downloads', downloadItems)
-            //}
-
             var downloadItem = {
                 id: guid(),
-                name: name,
+                fileName: name,
                 status: 'progress'
             };
 
@@ -42,7 +38,6 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
 
                 var contentDisposition = headers("content-disposition");
                 var filename = contentDisposition.substring((contentDisposition.indexOf('filename=') + 9));
-                //saveAs(blob, filename);
 
                 downloadItem.status = 'success';
                 downloadItem.fileName = filename;
@@ -60,16 +55,15 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
             restrict: 'E',
             replace: true,
             link: function (scope, element) {
-                element.hide();
                 scope.$watch(function () {
                     return downloadItems.length;
                 },
                     function (value) {
                         if (value && value > 0) {
-                            element.show();
+                            element.show(300);
                         }
                         else {
-                            element.hide();
+                            element.hide(300);
                         }
                     });
 
@@ -77,13 +71,17 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
                     element.remove();
                 });
             },
-            controller: ['$scope', '$attrs', '$element', '$timeout', 'localStorageService', function Controller($scope, $attrs, $element, $timeout, localStorageService) {
+            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', 'localStorageService', function Controller($scope, $attrs, $element, $timeout, $log, localStorageService) {
                 var vm = this;
+                vm.downloadsModel = {
+                    hide: true
+                };
 
-                vm.successIconClick = successIconClick;
-                vm.errorIconClick = errorIconClick;
                 vm.removeIconClick = removeIconClick;
                 vm.saveIconClick = saveIconClick;
+                vm.refresh = refresh;
+                vm.close = vm.close;
+
 
                 initCtrl();
 
@@ -91,22 +89,24 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
                     $scope.downloadItems = downloadItems;
                 }
 
-                function successIconClick(item) {
-                    console.log("clicked with item " + item.name);
-                }
-
-                function errorIconClick(item) {
-                    console.log("clicked with item " + item.name);
-                }
-
                 function removeIconClick(item) {
+                    $log.info("Removendo item " + item.name);
                     var index = downloadItems.indexOf(item);
                     downloadItems.splice(index, 1);
                     localStorageService.remove('download-' + item.id)
                 }
 
                 function saveIconClick(item) {
+                    $log.info("Salvando item " + item.name);
                     saveAs(item.data, item.fileName);
+                }
+
+                function refresh() {
+                    $log.info("Atualizando lista de itens");
+                }
+
+                function close() {
+                    $log.info("Fechando lista de downloads");
                 }
             }],
             controllerAs: 'activitiesCtrl',
