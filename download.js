@@ -90,13 +90,20 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
                 }
 
                 function removeIconClick(item) {
+                    if (item.status == 'progress') {
+                        return false;
+                    }
                     $log.info("Removendo item " + item.name);
                     var index = downloadItems.indexOf(item);
                     downloadItems.splice(index, 1);
                     localStorageService.remove('download-' + item.id)
+
                 }
 
                 function saveIconClick(item) {
+                    if (item.status != 'success') {
+                        return false;
+                    }
                     $log.info("Salvando item " + item.name);
                     saveAs(item.data, item.fileName);
                 }
