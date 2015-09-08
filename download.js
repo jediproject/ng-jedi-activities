@@ -6,6 +6,10 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() 
 
     var downloadItems = [];
 
+    var hideClass = 'hideMe';
+
+    var minimizeClass = 'minimizeMe';
+
     function guid() {
         function s4() {
             return Math.floor((1 + Math.random()) * 0x10000)
@@ -48,18 +52,22 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() 
                 downloadItem.data = new Blob([data], {
                     type: headers("content-type")
                 });
-                localStorageService.set('download-' + downloadItem.id, downloadItem)
+                localStorageService.set('download-' + downloadItem.id, downloadItem);
             }).error(function(data, status) {
                 downloadItem.status = 'error';
                 downloadItem.data = null;
-                localStorageService.set('download-' + downloadItem.id, downloadItem)
+                localStorageService.set('download-' + downloadItem.id, downloadItem);
             });
         };
 
         this.clearDownloads = function clearDownloads() {
             $rootScope.$broadcast('jedi.download.ClearDownloads');
-            console.log('cleanDownloads');
         };
+
+        this.toggle = function toggleMonitor() {
+            $rootScope.$broadcast('jedi.download.toggleMonitor');
+        };
+
     }]).directive('jdDownload', ['$log', function($log) {
 
         return {
@@ -71,7 +79,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() 
                     },
                     function(value) {
                         if (value && value > 0) {
-                            elem.removeClass(hideClass);
+                            element.removeClass(hideClass);
                         } else {
                             element.addClass(hideClass);
                         }
@@ -82,14 +90,16 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() 
                 });
 
                 scope.$on('jedi.download.ClearDownloads', activitiesCtrl.clear);
+
+                scope.$on('jedi.download.toggleMonitor', activitiesCtrl.toggle);
             },
-            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', 'localStorageService', function Controller($scope, $attrs, $element, $timeout, $log, localStorageService) {
+            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', 'localStorageService', function Controller(scope, attrs, element, $timeout, $log, localStorageService) {
 
                 $log.info(downloadItems.length);
 
                 var vm = this;
                 vm.downloadsModel = {
-                    hide: false
+                    minimize: false
                 };
 
                 vm.removeIconClick = removeIconClick;
@@ -98,11 +108,13 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() 
                 vm.close = close;
                 vm.hasItemsToShow = hasItemsToShow;
                 vm.clear = clear;
+                vm.show = show;
+                vm.toggle = toggle;
 
                 initCtrl();
 
                 function initCtrl() {
-                    $scope.downloadItems = downloadItems;
+                    scope.downloadItems = downloadItems;
                 }
 
                 function removeIconClick(item) {
@@ -128,8 +140,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() 
                 }
 
                 function close() {
-                    $log.info("Fechando lista de downloads");
-                    clear();
+                    element.addClass(hideClass);
                 }
 
                 function hasItemsToShow() {
@@ -143,6 +154,19 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() 
                         localStorageService.remove('download-' + id);
                     }
                     $log.info('Lista de Downloads removida');
+                }
+
+                function show() {
+                    element.removeClass(hideClass);
+                    element.removeClass(minimizeClass);
+                }
+
+                function toggle() {
+                    if (element.hasClass(hideClass)) {
+                        show();
+                    } else {
+                        close();
+                    }
                 }
             }],
             controllerAs: 'activitiesCtrl',

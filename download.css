@@ -15,9 +15,14 @@
     transition: all 0.5s;
 }
 
-.animate-slide.hideMe {
+.animate-slide.minimizeMe {
     height: 30px;
     width: 310px;
+}
+
+.animate-slide.hideMe {
+    height: 0;
+    width: 0;
 }
 
 .animate-slide .activities-header {
