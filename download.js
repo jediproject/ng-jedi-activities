@@ -71,9 +71,9 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() 
                     },
                     function(value) {
                         if (value && value > 0) {
-                            element.show(300);
+                            elem.removeClass(hideClass);
                         } else {
-                            element.hide(300);
+                            element.addClass(hideClass);
                         }
                     });
 
