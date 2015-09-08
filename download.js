@@ -41,7 +41,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
 
                 downloadItem.status = 'success';
                 downloadItem.fileName = filename;
-                downloadItem.data = new Blob([data], { type: headers("content-type") });;
+                downloadItem.data = new Blob([data], { type: headers("content-type") });
                 localStorageService.set('download-' + downloadItem.id, downloadItem)
             }).error(function (data, status) {
                 downloadItem.status = 'error';
@@ -49,7 +49,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
                 localStorageService.set('download-' + downloadItem.id, downloadItem)
             });
         };
-    }]).directive('jdDownload', [function () {
+    }]).directive('jdDownload', ['$log', function ($log) {
 
         return {
             restrict: 'E',
@@ -72,16 +72,19 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
                 });
             },
             controller: ['$scope', '$attrs', '$element', '$timeout', '$log', 'localStorageService', function Controller($scope, $attrs, $element, $timeout, $log, localStorageService) {
+
+                $log.info(downloadItems.length);
+
                 var vm = this;
                 vm.downloadsModel = {
-                    hide: true
+                    hide: false
                 };
 
                 vm.removeIconClick = removeIconClick;
                 vm.saveIconClick = saveIconClick;
                 vm.refresh = refresh;
-                vm.close = vm.close;
-
+                vm.close = close;
+                vm.hasItemsToShow = hasItemsToShow;
 
                 initCtrl();
 
@@ -97,7 +100,6 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
                     var index = downloadItems.indexOf(item);
                     downloadItems.splice(index, 1);
                     localStorageService.remove('download-' + item.id)
-
                 }
 
                 function saveIconClick(item) {
@@ -114,6 +116,11 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function ()
 
                 function close() {
                     $log.info("Fechando lista de downloads");
+                    downloadItems = [];
+
+                }
+                function hasItemsToShow() {
+                    return downloadItems && downloadItems.length > 0;
                 }
             }],
             controllerAs: 'activitiesCtrl',

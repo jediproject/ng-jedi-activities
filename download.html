@@ -1,41 +1,43 @@
-<div ng-class="{ hideMe: activitiesCtrl.downloadsModel.hide }" class="animate-slide panel-default collapsable">
-    <div class="panel-heading activities-header">
-        <div class="row">
-            <div class="col-md-9 pull-left">
-                <strong class="activities-header-content">
-                    <span class="glyphicon glyphicon-tasks glyphicon-pointer" ng-click="activitiesCtrl.downloadsModel.hide = !activitiesCtrl.downloadsModel.hide"></span>
-                    Downloads
-                </strong>
-            </div>
-            <div class="col-md-3 text-right">
-                <span class="glyphicon glyphicon-pointer glyphicon-refresh" title="Atualizar" ng-click="activitiesCtrl.refresh()"></span>&nbsp;
-                <span class="glyphicon glyphicon-pointer glyphicon-minus" title="Minimizar" ng-click="activitiesCtrl.downloadsModel.hide = !activitiesCtrl.downloadsModel.hide"></span>&nbsp;
-                <span class="glyphicon glyphicon-pointer glyphicon-remove" title="Fechar" ng-click="activitiesCtrl.close()"></span>
-            </div>
-
-        </div>
-    </div>
-    <div class="panel-body activities-scroll">
-        <div ng-repeat="item in downloadItems track by $index">
+<div ng-if="activitiesCtrl.hasItemsToShow()">
+    <div ng-class="{ hideMe: activitiesCtrl.downloadsModel.hide }" class="animate-slide panel-default collapsable">
+        <div class="panel-heading activities-header">
             <div class="row">
-                <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">
-                    <span>{{item.fileName}}</span>
+                <div class="col-md-9 pull-left">
+                    <strong class="activities-header-content">
+                        <span class="glyphicon glyphicon-tasks glyphicon-pointer" ng-click="activitiesCtrl.downloadsModel.hide = !activitiesCtrl.downloadsModel.hide"></span>
+                        Downloads
+                    </strong>
                 </div>
-                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">
-                    <span class="activities-progress" ng-if="item.status == 'progress'"><i class="fa fa-cog fa-spin"></i></span>
-                    <span class="activities-done glyphicon glyphicon-saved" ng-if="item.status == 'success'"></span>
-                    <span class="activities-error glyphicon glyphicon-remove" ng-if="item.status == 'error'"></span>
-                    <span class="activities-trash glyphicon glyphicon-floppy-disk" ng-class="{'glyphicon-pointer' : item.status == 'success' }" title="Salvar" ng-click="activitiesCtrl.saveIconClick(item)"></span>
-                    <span class="activities-trash glyphicon glyphicon-trash" ng-class="{'glyphicon-pointer' : item.status != 'progress' }" title="Remover" ng-click="activitiesCtrl.removeIconClick(item)"></span>
+                <div class="col-md-3 text-right">
+                    <span class="glyphicon glyphicon-pointer glyphicon-refresh" title="Atualizar" ng-click="activitiesCtrl.refresh()"></span>&nbsp;
+                    <span class="glyphicon glyphicon-pointer glyphicon-minus" title="Minimizar" ng-click="activitiesCtrl.downloadsModel.hide = !activitiesCtrl.downloadsModel.hide"></span>&nbsp;
+                    <span class="glyphicon glyphicon-pointer glyphicon-remove" title="Fechar" ng-click="activitiesCtrl.close()"></span>
                 </div>
-                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">
-                    <!--<span class="activities-trash glyphicon glyphicon-save-file" ng-click="activitiesCtrl.saveIconClick(item)"></span>-->
-                </div>
-                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">
-                    <!--<span class="activities-trash glyphicon glyphicon-trash" ng-click="activitiesCtrl.removeIconClick(item)"></span>-->
-                </div>
+
             </div>
-            <hr class="row activities-divider" />
+        </div>
+        <div class="panel-body activities-scroll">
+            <div ng-repeat="item in downloadItems track by $index">
+                <div class="row">
+                    <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">
+                        <span>{{item.fileName}}</span>
+                    </div>
+                    <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">
+                        <span class="activities-progress" ng-if="item.status == 'progress'"><i class="fa fa-cog fa-spin"></i></span>
+                        <span class="activities-done glyphicon glyphicon-saved" ng-if="item.status == 'success'"></span>
+                        <span class="activities-error glyphicon glyphicon-remove" ng-if="item.status == 'error'"></span>
+                        <span class="activities-trash glyphicon glyphicon-floppy-disk" ng-class="{'glyphicon-pointer' : item.status == 'success' }" title="Salvar" ng-click="activitiesCtrl.saveIconClick(item)"></span>
+                        <span class="activities-trash glyphicon glyphicon-trash" ng-class="{'glyphicon-pointer' : item.status != 'progress' }" title="Remover" ng-click="activitiesCtrl.removeIconClick(item)"></span>
+                    </div>
+                    <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">
+                        <!--<span class="activities-trash glyphicon glyphicon-save-file" ng-click="activitiesCtrl.saveIconClick(item)"></span>-->
+                    </div>
+                    <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">
+                        <!--<span class="activities-trash glyphicon glyphicon-trash" ng-click="activitiesCtrl.removeIconClick(item)"></span>-->
+                    </div>
+                </div>
+                <hr class="row activities-divider" />
+            </div>
         </div>
     </div>
 </div>
