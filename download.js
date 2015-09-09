@@ -1,13 +1,11 @@
 'use strict';
 
-define(['angular', 'file-saver-saveas-js', 'angular-local-storage'], function() {
+define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-indexed-db'], function() {
 
     angular.module('jedi.download', []);
 
     var downloadItems = [];
-
     var hideClass = 'hideMe';
-
     var minimizeClass = 'minimizeMe';
 
     function guid() {
