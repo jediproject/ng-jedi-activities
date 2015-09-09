@@ -1,12 +1,11 @@
 'use strict';
 
-define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-indexed-db'], function() {
-
-    angular.module('jedi.download', []);
+define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
     var downloadItems = [];
     var hideClass = 'hideMe';
     var minimizeClass = 'minimizeMe';
+    var storeName = 'downloadItems';
 
     function guid() {
         function s4() {
@@ -18,8 +17,16 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
             s4() + '-' + s4() + s4() + s4();
     }
 
-    angular.module('jedi.download').service('jedi.download.DownloadService', ['$http', 'localStorageService', '$rootScope', function($http, localStorageService, $rootScope) {
-        this.initDownload = function(baseUrl, apiUrl, method, params, name) {
+    angular.module('jedi.download', []).config(['$indexedDBProvider', function ($indexedDBProvider) {
+        $indexedDBProvider
+            .connection('downloads')
+            .upgradeDatabase(1, function (event, db, tx) {
+                var objStore = db.createObjectStore('downloadItems', { keyPath: 'id' });
+            });
+    }]);
+
+    angular.module('jedi.download').service('jedi.download.DownloadService', ['$http', '$rootScope', '$indexedDB', '$log', function ($http, $rootScope, $indexedDB, $log) {
+        this.initDownload = function (baseUrl, apiUrl, method, params, name) {
 
             var downloadItem = {
                 id: guid(),
@@ -40,7 +47,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
                 }
             };
 
-            $http(request).success(function(data, status, headers, config) {
+            $http(request).success(function (data, status, headers, config) {
 
                 var contentDisposition = headers("content-disposition");
                 var filename = contentDisposition.substring((contentDisposition.indexOf('filename=') + 9));
@@ -50,11 +57,12 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
                 downloadItem.data = new Blob([data], {
                     type: headers("content-type")
                 });
-                localStorageService.set('download-' + downloadItem.id, downloadItem);
-            }).error(function(data, status) {
+
+                insertToIndexedDb(downloadItem);
+            }).error(function (data, status) {
                 downloadItem.status = 'error';
                 downloadItem.data = null;
-                localStorageService.set('download-' + downloadItem.id, downloadItem);
+                insertToIndexedDb(downloadItem);
             });
         };
 
@@ -66,16 +74,28 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
             $rootScope.$broadcast('jedi.download.toggleMonitor');
         };
 
-    }]).directive('jdDownload', ['$log', function($log) {
+        function insertToIndexedDb(item) {
+            $indexedDB.openStore(storeName, function (store) {
+                store.insert({ "id": item.id, "downloadItem": item }).then(function (e) {
+                    $log.info('Inserindo download id: ' + e);
+                });
+
+                store.getAll().then(function (people) {
+                    var teste = people;
+                });
+            });
+        };
+
+    }]).directive('jdDownload', ['$log', function ($log) {
 
         return {
             restrict: 'E',
             replace: true,
-            link: function(scope, element, attrs, activitiesCtrl) {
-                scope.$watch(function() {
-                        return downloadItems.length;
-                    },
-                    function(value) {
+            link: function (scope, element, attrs, activitiesCtrl) {
+                scope.$watch(function () {
+                    return downloadItems.length;
+                },
+                    function (value) {
                         if (value && value > 0) {
                             element.removeClass(hideClass);
                         } else {
@@ -83,7 +103,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
                         }
                     });
 
-                scope.$on('$destroy', function() {
+                scope.$on('$destroy', function () {
                     element.remove();
                 });
 
@@ -91,7 +111,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
 
                 scope.$on('jedi.download.toggleMonitor', activitiesCtrl.toggle);
             },
-            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', 'localStorageService', function Controller(scope, attrs, element, $timeout, $log, localStorageService) {
+            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', '$indexedDB', function Controller(scope, attrs, element, $timeout, $log, $indexedDB) {
 
                 $log.info(downloadItems.length);
 
@@ -122,7 +142,9 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
                     $log.info("Removendo item " + item.name);
                     var index = downloadItems.indexOf(item);
                     downloadItems.splice(index, 1);
-                    localStorageService.remove('download-' + item.id);
+                    $indexedDB.openStore('downloadItems', function (store) {
+                        store.delete(item.id);
+                    });
                 }
 
                 function saveIconClick(item) {
@@ -149,7 +171,9 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
                     for (var i = downloadItems.length - 1; i >= 0; i--) {
                         var id = downloadItems[i].id;
                         downloadItems.splice(i, 1);
-                        localStorageService.remove('download-' + id);
+                        $indexedDB.openStore('downloadItems', function (store) {
+                            store.delete(id);
+                        });
                     }
                     $log.info('Lista de Downloads removida');
                 }
@@ -169,7 +193,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
             }],
             controllerAs: 'activitiesCtrl',
             bindToController: true,
-            templateUrl: function(elem, attrs) {
+            templateUrl: function (elem, attrs) {
                 if (attrs.templateUrl) {
                     return attrs.templateUrl;
                 } else {
@@ -177,15 +201,13 @@ define(['angular', 'file-saver-saveas-js', 'angular-local-storage', 'angular-ind
                 }
             },
         };
-    }]).run(['localStorageService', function(localStorageService) {
-
-        var lsKeys = localStorageService.keys();
-
-        angular.forEach(lsKeys, function(key) {
-            if (key.toLowerCase().indexOf('download-') > -1) {
-                downloadItems.push(localStorageService.get(key));
-            }
+    }]).run(['$indexedDB', function ($indexedDB) {
+        $indexedDB.openStore('downloadItems', function (store) {
+            store.getAll().then(function (objects) {
+                angular.forEach(objects, function (item) {
+                        downloadItems.push(item.downloadItem);
+                });
+            });
         });
-
     }]);
 });
