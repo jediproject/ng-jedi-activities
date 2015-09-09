@@ -173,6 +173,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                         });
                     }
                     $log.info('Lista de Downloads removida');
+                    element.addClass(hideClass);
                 }
 
                 function show() {
