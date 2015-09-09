@@ -40,11 +40,9 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 method: method.toUpperCase(),
                 url: baseUrl + '/' + apiUrl,
                 data: params,
-                config: {
-                    responseType: 'arraybuffer',
-                    ignoreLoadingBar: true,
-                    showLoadingModal: true
-                }
+                responseType: 'arraybuffer',
+                ignoreLoadingBar: true,
+                showLoadingModal: false
             };
 
             $http(request).success(function (data, status, headers, config) {
@@ -54,14 +52,13 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
                 downloadItem.status = 'success';
                 downloadItem.fileName = filename;
-                downloadItem.data = new Blob([data], {
-                    type: headers("content-type")
-                });
+                downloadItem.data = new Blob([data], { type: headers("content-type") });
 
                 insertToIndexedDb(downloadItem);
             }).error(function (data, status) {
                 downloadItem.status = 'error';
                 downloadItem.data = null;
+
                 insertToIndexedDb(downloadItem);
             });
         };
@@ -205,7 +202,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
         $indexedDB.openStore('downloadItems', function (store) {
             store.getAll().then(function (objects) {
                 angular.forEach(objects, function (item) {
-                        downloadItems.push(item.downloadItem);
+                    downloadItems.push(item.downloadItem);
                 });
             });
         });
