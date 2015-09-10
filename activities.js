@@ -31,10 +31,12 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
             var counter = 0;
             var timeout = $timeout(onTimeout, 1000);
+            var date = new Date(0, 0, 0, 0, 0, 0);
 
             var onTimeout = function () {
                 counter++;
-                activityItem.duration = counter;
+                date.setSeconds(counter);
+                activityItem.duration = "(" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0" + date.getSeconds()).slice(-2) + ")";
                 timeout = $timeout(onTimeout, 1000);
 
                 if (activityItem.status != 'progress') {
@@ -46,7 +48,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 id: guid(),
                 fileName: name,
                 status: 'progress',
-                duration: 0
+                duration: date.getHours().toString() + ":" + date.getMinutes().toString()
             };
 
             activityItems.push(activityItem);
