@@ -1,22 +1,22 @@
-<div ng-class="{ minimizeMe: activitiesCtrl.downloadsModel.minimize }" class="animate-slide panel-default collapsable">
+<div ng-class="{ minimizeMe: activitiesCtrl.activitiesModel.minimize }" class="animate-slide panel-default collapsable">
     <div class="panel-heading activities-header">
         <div class="row">
             <div class="col-md-9 pull-left">
                 <strong class="activities-header-content">
-                    <span class="glyphicon glyphicon-tasks glyphicon-pointer" ng-click="activitiesCtrl.downloadsModel.minimize = !activitiesCtrl.downloadsModel.minimize"></span>
-                    Downloads
+                    <span class="glyphicon glyphicon-tasks glyphicon-pointer" ng-click="activitiesCtrl.activitiesModel.minimize = !activitiesCtrl.activitiesModel.minimize"></span>
+                    Atividades
                 </strong>
             </div>
             <div class="col-md-3 text-right">
                 <span class="glyphicon glyphicon-pointer glyphicon-refresh" title="Atualizar" ng-click="activitiesCtrl.refresh()"></span>&nbsp;
-                <span class="glyphicon glyphicon-pointer glyphicon-minus" title="Minimizar" ng-click="activitiesCtrl.downloadsModel.minimize = !activitiesCtrl.downloadsModel.minimize"></span>&nbsp;
+                <span class="glyphicon glyphicon-pointer glyphicon-minus" title="Minimizar" ng-click="activitiesCtrl.activitiesModel.minimize = !activitiesCtrl.activitiesModel.minimize"></span>&nbsp;
                 <span class="glyphicon glyphicon-pointer glyphicon-remove" title="Fechar" ng-click="activitiesCtrl.close()"></span>
             </div>
 
         </div>
     </div>
     <div class="panel-body activities-scroll">
-        <div ng-repeat="item in downloadItems track by $index">
+        <div ng-repeat="item in activityItems track by $index">
             <div class="row">
                 <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">
                     <span>{{item.fileName}}</span>

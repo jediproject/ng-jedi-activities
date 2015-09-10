@@ -1,2 +1,2 @@
-# ng-jedi-download
-Easy way to make download requests.
+# ng-jedi-activities
+Easy way to manage time-consuming requests.

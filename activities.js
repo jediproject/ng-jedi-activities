@@ -2,10 +2,10 @@
 
 define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
-    var downloadItems = [];
+    var activityItems = [];
     var hideClass = 'hideMe';
     var minimizeClass = 'minimizeMe';
-    var storeName = 'downloadItems';
+    var storeName = 'activities';
 
     function guid() {
         function s4() {
@@ -17,24 +17,24 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
             s4() + '-' + s4() + s4() + s4();
     }
 
-    angular.module('jedi.download', []).config(['$indexedDBProvider', function ($indexedDBProvider) {
+    angular.module('jedi.activities', []).config(['$indexedDBProvider', function ($indexedDBProvider) {
         $indexedDBProvider
-            .connection('downloads')
+            .connection('activities')
             .upgradeDatabase(1, function (event, db, tx) {
-                var objStore = db.createObjectStore('downloadItems', { keyPath: 'id' });
+                var objStore = db.createObjectStore(storeName, { keyPath: 'id' });
             });
     }]);
 
-    angular.module('jedi.download').service('jedi.download.DownloadService', ['$http', '$rootScope', '$indexedDB', '$log', function ($http, $rootScope, $indexedDB, $log) {
-        this.initDownload = function (baseUrl, apiUrl, method, params, name) {
+    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$http', '$rootScope', '$indexedDB', '$log', function ($http, $rootScope, $indexedDB, $log) {
+        this.initActivity = function (baseUrl, apiUrl, method, params, name) {
 
-            var downloadItem = {
+            var activityItem = {
                 id: guid(),
                 fileName: name,
                 status: 'progress'
             };
 
-            downloadItems.push(downloadItem);
+            activityItems.push(activityItem);
 
             var request = {
                 method: method.toUpperCase(),
@@ -50,31 +50,31 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 var contentDisposition = headers("content-disposition");
                 var filename = contentDisposition.substring((contentDisposition.indexOf('filename=') + 9));
 
-                downloadItem.status = 'success';
-                downloadItem.fileName = filename;
-                downloadItem.data = new Blob([data], { type: headers("content-type") });
+                activityItem.status = 'success';
+                activityItem.fileName = filename;
+                activityItem.data = new Blob([data], { type: headers("content-type") });
 
-                insertToIndexedDb(downloadItem);
+                insertToIndexedDb(activityItem);
             }).error(function (data, status) {
-                downloadItem.status = 'error';
-                downloadItem.data = null;
+                activityItem.status = 'error';
+                activityItem.data = null;
 
-                insertToIndexedDb(downloadItem);
+                insertToIndexedDb(activityItem);
             });
         };
 
-        this.clearDownloads = function clearDownloads() {
-            $rootScope.$broadcast('jedi.download.ClearDownloads');
+        this.clearActivities = function clearActivities() {
+            $rootScope.$broadcast('jedi.activity.clearActivities');
         };
 
         this.toggle = function toggleMonitor() {
-            $rootScope.$broadcast('jedi.download.toggleMonitor');
+            $rootScope.$broadcast('jedi.activity.toggleMonitor');
         };
 
         function insertToIndexedDb(item) {
             $indexedDB.openStore(storeName, function (store) {
-                store.insert({ "id": item.id, "downloadItem": item }).then(function (e) {
-                    $log.info('Inserindo download id: ' + e);
+                store.insert({ "id": item.id, "activityItem": item }).then(function (e) {
+                    $log.info('Inserindo atividade id: ' + e);
                 });
 
                 store.getAll().then(function (people) {
@@ -83,14 +83,14 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
             });
         };
 
-    }]).directive('jdDownload', ['$log', function ($log) {
+    }]).directive('jdActivity', ['$log', function ($log) {
 
         return {
             restrict: 'E',
             replace: true,
             link: function (scope, element, attrs, activitiesCtrl) {
                 scope.$watch(function () {
-                    return downloadItems.length;
+                    return activityItems.length;
                 },
                     function (value) {
                         if (value && value > 0) {
@@ -104,16 +104,16 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                     element.remove();
                 });
 
-                scope.$on('jedi.download.ClearDownloads', activitiesCtrl.clear);
+                scope.$on('jedi.activity.clearActivities', activitiesCtrl.clear);
 
-                scope.$on('jedi.download.toggleMonitor', activitiesCtrl.toggle);
+                scope.$on('jedi.activity.toggleMonitor', activitiesCtrl.toggle);
             },
             controller: ['$scope', '$attrs', '$element', '$timeout', '$log', '$indexedDB', function Controller(scope, attrs, element, $timeout, $log, $indexedDB) {
 
-                $log.info(downloadItems.length);
+                $log.info(activityItems.length);
 
                 var vm = this;
-                vm.downloadsModel = {
+                vm.activitiesModel = {
                     minimize: false
                 };
 
@@ -129,7 +129,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 initCtrl();
 
                 function initCtrl() {
-                    scope.downloadItems = downloadItems;
+                    scope.activityItems = activityItems;
                 }
 
                 function removeIconClick(item) {
@@ -137,9 +137,9 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                         return false;
                     }
                     $log.info("Removendo item " + item.name);
-                    var index = downloadItems.indexOf(item);
-                    downloadItems.splice(index, 1);
-                    $indexedDB.openStore('downloadItems', function (store) {
+                    var index = activityItems.indexOf(item);
+                    activityItems.splice(index, 1);
+                    $indexedDB.openStore(storeName, function (store) {
                         store.delete(item.id);
                     });
                 }
@@ -161,18 +161,18 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 }
 
                 function hasItemsToShow() {
-                    return downloadItems && downloadItems.length > 0;
+                    return activityItems && activityItems.length > 0;
                 }
 
                 function clear() {
-                    for (var i = downloadItems.length - 1; i >= 0; i--) {
-                        var id = downloadItems[i].id;
-                        downloadItems.splice(i, 1);
-                        $indexedDB.openStore('downloadItems', function (store) {
+                    $log.info('Removendo lista de atividades');
+                    for (var i = activityItems.length - 1; i >= 0; i--) {
+                        var id = activityItems[i].id;
+                        activityItems.splice(i, 1);
+                        $indexedDB.openStore(storeName, function (store) {
                             store.delete(id);
                         });
                     }
-                    $log.info('Lista de Downloads removida');
                     element.addClass(hideClass);
                 }
 
@@ -195,15 +195,15 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 if (attrs.templateUrl) {
                     return attrs.templateUrl;
                 } else {
-                    return "assets/libs/ng-jedi-download/download.html";
+                    return "assets/libs/ng-jedi-activities/activities.html";
                 }
             },
         };
     }]).run(['$indexedDB', function ($indexedDB) {
-        $indexedDB.openStore('downloadItems', function (store) {
+        $indexedDB.openStore(storeName, function (store) {
             store.getAll().then(function (objects) {
                 angular.forEach(objects, function (item) {
-                    downloadItems.push(item.downloadItem);
+                    activityItems.push(item.activityItem);
                 });
             });
         });
