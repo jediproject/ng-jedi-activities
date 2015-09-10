@@ -29,7 +29,6 @@
   ],
   "dependencies": {
     "file-saver-saveas-js": "~1.20150507.2",
-    "angular-indexed-db": "~1.1.3",
-    "angular-timer": "~1.3.3"
+    "angular-indexed-db": "~1.1.3"
   }
 }

@@ -1,6 +1,6 @@
 'use strict';
 
-define(['angular', 'file-saver-saveas-js', 'angular-indexed-db', 'angular-timer'], function () {
+define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
     var activityItems = [];
     var hideClass = 'hideMe';
@@ -25,15 +25,28 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db', 'angular-timer'
             });
     }]);
 
-    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$http', '$scope', '$rootScope', '$indexedDB', '$log', function ($http, $rootScope, $scope, $indexedDB, $log) {
+    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($http, $rootScope, $timeout, $indexedDB, $log) {
+
         this.initActivity = function (baseUrl, apiUrl, method, params, name) {
 
-            startTimer();
+            var counter = 0;
+            var timeout = $timeout(onTimeout, 1000);
+
+            var onTimeout = function () {
+                counter++;
+                activityItem.duration = counter;
+                timeout = $timeout(onTimeout, 1000);
+
+                if (activityItem.status != 'progress') {
+                    $timeout.cancel(timeout);
+                }
+            };
 
             var activityItem = {
                 id: guid(),
                 fileName: name,
-                status: 'progress'
+                status: 'progress',
+                duration: 0
             };
 
             activityItems.push(activityItem);
@@ -47,6 +60,8 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db', 'angular-timer'
                 showLoadingModal: false
             };
 
+            $timeout(onTimeout);
+
             $http(request).success(function (data, status, headers, config) {
 
                 var contentDisposition = headers("content-disposition");
@@ -57,13 +72,11 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db', 'angular-timer'
                 activityItem.data = new Blob([data], { type: headers("content-type") });
 
                 insertToIndexedDb(activityItem);
-                stopTimer();
             }).error(function (data, status) {
                 activityItem.status = 'error';
                 activityItem.data = null;
 
                 insertToIndexedDb(activityItem);
-                stopTimer();
             });
         };
 
@@ -85,14 +98,6 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db', 'angular-timer'
                     var teste = people;
                 });
             });
-        };
-
-        function startTimer(){
-            scope.$broadcast('timer-start');
-        };
-
-        function stopTimer(){
-            scope.$broadcast('timer-stop');
         };
 
     }]).directive('jdActivity', ['$log', function ($log) {
