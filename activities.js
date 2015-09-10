@@ -1,6 +1,6 @@
 'use strict';
 
-define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
+define(['angular', 'file-saver-saveas-js', 'angular-indexed-db', 'angular-timer'], function () {
 
     var activityItems = [];
     var hideClass = 'hideMe';
@@ -25,8 +25,10 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
             });
     }]);
 
-    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$http', '$rootScope', '$indexedDB', '$log', function ($http, $rootScope, $indexedDB, $log) {
+    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$http', '$scope', '$rootScope', '$indexedDB', '$log', function ($http, $rootScope, $scope, $indexedDB, $log) {
         this.initActivity = function (baseUrl, apiUrl, method, params, name) {
+
+            startTimer();
 
             var activityItem = {
                 id: guid(),
@@ -55,11 +57,13 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 activityItem.data = new Blob([data], { type: headers("content-type") });
 
                 insertToIndexedDb(activityItem);
+                stopTimer();
             }).error(function (data, status) {
                 activityItem.status = 'error';
                 activityItem.data = null;
 
                 insertToIndexedDb(activityItem);
+                stopTimer();
             });
         };
 
@@ -81,6 +85,14 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                     var teste = people;
                 });
             });
+        };
+
+        function startTimer(){
+            scope.$broadcast('timer-start');
+        };
+
+        function stopTimer(){
+            scope.$broadcast('timer-stop');
         };
 
     }]).directive('jdActivity', ['$log', function ($log) {
