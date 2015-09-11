@@ -35,6 +35,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
             var onTimeout = function () {
                 counter++;
+                date = new Date(0, 0, 0, 0, 0, 0);
                 date.setSeconds(counter);
                 activityItem.duration = "(" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0" + date.getSeconds()).slice(-2) + ")";
                 timeout = $timeout(onTimeout, 1000);
