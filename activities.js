@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
@@ -24,6 +24,11 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 var objStore = db.createObjectStore(storeName, { keyPath: 'id' });
             });
     }]);
+
+    angular.module('jedi.activities').constant('jedi.activities.ActivitiesConfig', {
+        inProgressWarning: 'Ao realizar esta ação você perderá {{count}} atividade(s) pendentes.',
+        i18nDirective: ''
+    });
 
     angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($http, $rootScope, $timeout, $indexedDB, $log) {
 
@@ -91,42 +96,71 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
             $rootScope.$broadcast('jedi.activity.toggleMonitor');
         };
 
+        this.hasInProgressActivities = function hasInProgressActivities() {
+            var count = 0;
+            angular.forEach(activityItems, function (item, index) {
+                if (item.status === "progress") {
+                    count++;
+                }
+            });
+            return count > 0;
+        };
+
+        this.hasActivities = function hasActivities() {
+            return activityItems.length > 0;
+        }
+
         function insertToIndexedDb(item) {
             $indexedDB.openStore(storeName, function (store) {
                 store.insert({ "id": item.id, "activityItem": item }).then(function (e) {
                     $log.info('Inserindo atividade id: ' + e);
                 });
-
-                store.getAll().then(function (people) {
-                    var teste = people;
-                });
             });
         };
 
-    }]).directive('jdActivity', ['$log', function ($log) {
-
+    }]).directive('jdActivity', ['$log', '$interpolate', 'jedi.activities.ActivitiesConfig', function ($log, $interpolate, ActivitiesConfig) {
         return {
             restrict: 'E',
             replace: true,
-            link: function (scope, element, attrs, activitiesCtrl) {
-                scope.$watch(function () {
-                    return activityItems.length;
-                },
+            compile: function (element, attrs) {
+                if (ActivitiesConfig.i18nDirective) {
+                    var newi18n = document.createElement(ActivitiesConfig.i18nDirective);
+                    var text = document.createTextNode("Atividades");
+                    newi18n.appendChild(text);
+                    var oldi18n = document.querySelector("i18n");
+                    document.querySelector("#activitiesHeaderContent").replaceChild(newi18n, oldi18n);
+                }
+
+                return function postLink(scope, element, attrs, activitiesCtrl) {
+                    scope.$watch(function () {
+                        return activityItems.length;
+                    },
                     function (value) {
                         if (value && value > 0) {
-                            element.removeClass(hideClass);
+                            var inProgressCount = activitiesCtrl.getInProgressItemsCount();
+                            if (inProgressCount > 0) {
+                                element.removeClass(hideClass);
+                                element.removeClass(minimizeClass);
+                                activitiesCtrl.activitiesModel.minimize = false;
+                            }
                         } else {
                             element.addClass(hideClass);
                         }
                     });
 
-                scope.$on('$destroy', function () {
-                    element.remove();
-                });
+                    window.onbeforeunload = function (evt) {
+                        var obj = { count: activitiesCtrl.getInProgressItemsCount() };
 
-                scope.$on('jedi.activity.clearActivities', activitiesCtrl.clear);
+                        if (obj.count > 0) {
+                            return $interpolate(ActivitiesConfig.inProgressWarning)(obj);
+                        }
+                    }
 
-                scope.$on('jedi.activity.toggleMonitor', activitiesCtrl.toggle);
+                    scope.$on('jedi.activity.clearActivities', activitiesCtrl.clear);
+
+                    scope.$on('jedi.activity.toggleMonitor', activitiesCtrl.toggle);
+                }
+
             },
             controller: ['$scope', '$attrs', '$element', '$timeout', '$log', '$indexedDB', function Controller(scope, attrs, element, $timeout, $log, $indexedDB) {
 
@@ -145,6 +179,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 vm.clear = clear;
                 vm.show = show;
                 vm.toggle = toggle;
+                vm.getInProgressItemsCount = getInProgressItemsCount;
 
                 initCtrl();
 
@@ -164,6 +199,16 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                     });
                 }
 
+                function getInProgressItemsCount() {
+                    var count = 0;
+                    angular.forEach(activityItems, function (item, index) {
+                        if (item.status === "progress") {
+                            count++;
+                        }
+                    });
+                    return count;
+                }
+
                 function saveIconClick(item) {
                     if (item.status != 'success') {
                         return false;
@@ -173,6 +218,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 }
 
                 function refresh() {
+                    //ToDo ?                    
                     $log.info("Atualizando lista de itens");
                 }
 
