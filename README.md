@@ -111,3 +111,5 @@ app.config(['jedi.activities.ActivitiesConfig', function(ActivitiesConfig){
    ```
 
 - You can use {{count}} in the warning string to indicate the number os activities in progress that the user will lose because we are using angular's [$interpolate](https://docs.angularjs.org/api/ng/service/$interpolate).
+
+**[Back to top](#ng-jedi-activities)**
