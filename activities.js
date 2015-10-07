@@ -137,9 +137,10 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                     },
                     function (value) {
                         if (value && value > 0) {
+                            element.removeClass(hideClass);
+                                                       
                             var inProgressCount = activitiesCtrl.getInProgressItemsCount();
                             if (inProgressCount > 0) {
-                                element.removeClass(hideClass);
                                 element.removeClass(minimizeClass);
                                 activitiesCtrl.activitiesModel.minimize = false;
                             }
@@ -218,7 +219,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 }
 
                 function refresh() {
-                    //ToDo ?                    
+                    //ToDo ?
                     $log.info("Atualizando lista de itens");
                 }
 
