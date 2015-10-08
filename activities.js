@@ -89,11 +89,11 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
         };
 
         this.clearActivities = function clearActivities() {
-            $rootScope.$broadcast('jedi.activity.clearActivities');
+            $rootScope.$broadcast('jedi.activities.clearActivities');
         };
 
         this.toggle = function toggleMonitor() {
-            $rootScope.$broadcast('jedi.activity.toggleMonitor');
+            $rootScope.$broadcast('jedi.activities.toggleMonitor');
         };
 
         this.hasInProgressActivities = function hasInProgressActivities() {
@@ -138,7 +138,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                     function (value) {
                         if (value && value > 0) {
                             element.removeClass(hideClass);
-                                                       
+
                             var inProgressCount = activitiesCtrl.getInProgressItemsCount();
                             if (inProgressCount > 0) {
                                 element.removeClass(minimizeClass);
@@ -157,9 +157,9 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                         }
                     }
 
-                    scope.$on('jedi.activity.clearActivities', activitiesCtrl.clear);
+                    scope.$on('jedi.activities.clearActivities', activitiesCtrl.clear);
 
-                    scope.$on('jedi.activity.toggleMonitor', activitiesCtrl.toggle);
+                    scope.$on('jedi.activities.toggleMonitor', activitiesCtrl.toggle);
                 }
 
             },
