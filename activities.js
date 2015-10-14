@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
@@ -30,7 +30,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
         i18nDirective: ''
     });
 
-    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($http, $rootScope, $timeout, $indexedDB, $log) {
+    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($q, $http, $rootScope, $timeout, $indexedDB, $log) {
 
         this.initActivity = function (baseUrl, apiUrl, method, params, name) {
 
@@ -70,7 +70,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
             $timeout(onTimeout);
 
-            $http(request).success(function (data, status, headers, config) {
+            var httpPromise = $http(request).success(function (data, status, headers, config) {
 
                 var contentDisposition = headers("content-disposition");
                 var filename = contentDisposition.substring((contentDisposition.indexOf('filename=') + 9));
@@ -86,6 +86,12 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
                 insertToIndexedDb(activityItem);
             });
+
+            return $q.when(
+                httpPromise.then(function (response) {
+                    return date.getSeconds();
+                })
+            );
         };
 
         this.clearActivities = function clearActivities() {
@@ -192,7 +198,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                     if (item.status == 'progress') {
                         return false;
                     }
-                    $log.info("Removendo item " + item.name);
+                    $log.info("Removendo item " + item.fileName);
                     var index = activityItems.indexOf(item);
                     activityItems.splice(index, 1);
                     $indexedDB.openStore(storeName, function (store) {
