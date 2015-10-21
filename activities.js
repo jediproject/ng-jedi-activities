@@ -1,6 +1,6 @@
 'use strict';
 
-define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
+define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
     var activityItems = [];
     var hideClass = 'hideMe';
@@ -34,15 +34,12 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
         this.initActivity = function (baseUrl, apiUrl, method, params, name) {
 
-            var counter = 0;
             var timeout = $timeout(onTimeout, 1000);
-            var date = new Date(0, 0, 0, 0, 0, 0);
+            var duration = moment.duration();
 
             var onTimeout = function () {
-                counter++;
-                date = new Date(0, 0, 0, 0, 0, 0);
-                date.setSeconds(counter);
-                activityItem.duration = "(" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0" + date.getSeconds()).slice(-2) + ")";
+                duration.add(1, 's');
+                activityItem.duration = "(" + (duration.hours() ? duration.hours() + ':' : '') + ('0' + duration.minutes()).slice(-2) + ':' + ('0' + duration.seconds()).slice(-2) + ")";
                 timeout = $timeout(onTimeout, 1000);
 
                 if (activityItem.status != 'progress') {
@@ -54,7 +51,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
                 id: guid(),
                 fileName: name,
                 status: 'progress',
-                duration: date.getHours().toString() + ":" + date.getMinutes().toString()
+                duration: '(00:00)'
             };
 
             activityItems.push(activityItem);
@@ -89,7 +86,7 @@ define(['angular', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
 
             return $q.when(
                 httpPromise.then(function (response) {
-                    return date.getSeconds();
+                    return duration.asMilliseconds();
                 })
             );
         };
