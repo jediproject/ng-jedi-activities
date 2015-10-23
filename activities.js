@@ -281,7 +281,11 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryp
                                 }
 
                                 store.delete(item.id);
-                                activityItems = [];
+                                for (var i = 0; i < activityItems.length; i++) {
+                                    if (activityItems[i].id === item.id) {
+                                        activityItems.splice(i, 1);
+                                    }
+                                }
                             });
                         });
                     });
