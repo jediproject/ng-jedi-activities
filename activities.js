@@ -1,6 +1,6 @@
 'use strict';
 
-define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], function () {
+define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryptojslib'], function () {
 
     var activityItems = [];
     var hideClass = 'hideMe';
@@ -32,7 +32,7 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], func
 
     angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($q, $http, $rootScope, $timeout, $indexedDB, $log) {
 
-        this.initActivity = function (baseUrl, apiUrl, method, params, name) {
+        this.initActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin) {
 
             var timeout = $timeout(onTimeout, 1000);
             var duration = moment.duration();
@@ -49,9 +49,10 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], func
 
             var activityItem = {
                 id: guid(),
-                fileName: name,
+                fileName: activityName,
                 status: 'progress',
-                duration: '(00:00)'
+                duration: '(00:00)',
+                userLoginHash: CryptoJS.MD5(userLogin).toString()
             };
 
             activityItems.push(activityItem);
@@ -97,6 +98,10 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], func
 
         this.toggle = function toggleMonitor() {
             $rootScope.$broadcast('jedi.activities.toggleMonitor');
+        };
+
+        this.validateActivities = function validateActivities() {
+            $rootScope.$broadcast('jedi.activities.validateActivities');
         };
 
         this.hasInProgressActivities = function hasInProgressActivities() {
@@ -163,10 +168,12 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], func
                     scope.$on('jedi.activities.clearActivities', activitiesCtrl.clear);
 
                     scope.$on('jedi.activities.toggleMonitor', activitiesCtrl.toggle);
+
+                    scope.$on('jedi.activities.validateActivities', activitiesCtrl.validateActivities);
                 }
 
             },
-            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', '$indexedDB', function Controller(scope, attrs, element, $timeout, $log, $indexedDB) {
+            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', '$indexedDB', '$rootScope', function Controller(scope, attrs, element, $timeout, $log, $indexedDB, $rootScope) {
 
                 $log.info(activityItems.length);
 
@@ -183,6 +190,7 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], func
                 vm.clear = clear;
                 vm.show = show;
                 vm.toggle = toggle;
+                vm.validateActivities = validateActivities;
                 vm.getInProgressItemsCount = getInProgressItemsCount;
 
                 initCtrl();
@@ -258,6 +266,26 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], func
                         close();
                     }
                 }
+
+                function validateActivities() {
+                    $indexedDB.openStore(storeName, function (store) {
+                        store.getAll().then(function (objects) {
+                            var userIdentity = $rootScope.appContext.identity;
+                            angular.forEach(objects, function (item) {
+                                if (userIdentity) {
+                                    var currentUserLoginHash = CryptoJS.MD5(userIdentity.login).toString();
+                                    if (item.activityItem.userLoginHash === currentUserLoginHash) {
+                                        activityItems.push(item.activityItem);
+                                        return;
+                                    }
+                                }
+
+                                store.delete(item.id);
+                                activityItems = [];
+                            });
+                        });
+                    });
+                }
             }],
             controllerAs: 'activitiesCtrl',
             bindToController: true,
@@ -269,13 +297,7 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], func
                 }
             },
         };
-    }]).run(['$indexedDB', function ($indexedDB) {
-        $indexedDB.openStore(storeName, function (store) {
-            store.getAll().then(function (objects) {
-                angular.forEach(objects, function (item) {
-                    activityItems.push(item.activityItem);
-                });
-            });
-        });
+    }]).run([function () {
+
     }]);
 });
