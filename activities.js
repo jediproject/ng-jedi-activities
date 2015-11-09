@@ -100,8 +100,8 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryp
             $rootScope.$broadcast('jedi.activities.toggleMonitor');
         };
 
-        this.validateActivities = function validateActivities() {
-            $rootScope.$broadcast('jedi.activities.validateActivities');
+        this.validateActivities = function validateActivities(userIdentity) {
+            $rootScope.$broadcast('jedi.activities.validateActivities', userIdentity);
         };
 
         this.hasInProgressActivities = function hasInProgressActivities() {
@@ -267,10 +267,9 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryp
                     }
                 }
 
-                function validateActivities() {
+                function validateActivities(evt, userIdentity) {
                     $indexedDB.openStore(storeName, function (store) {
                         store.getAll().then(function (objects) {
-                            var userIdentity = $rootScope.appContext.identity;
                             angular.forEach(objects, function (item) {
                                 if (userIdentity) {
                                     var currentUserLoginHash = CryptoJS.MD5(userIdentity.login).toString();
