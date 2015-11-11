@@ -1,6 +1,14 @@
-'use strict';
-
-define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryptojslib'], function () {
+(function (factory) {
+    if (typeof define === 'function') {
+        define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryptojslib'], factory);
+    } else {
+        if (typeof module !== "undefined" && typeof exports !== "undefined" && module.exports === exports){
+            module.exports = 'jedi.activities';
+        }
+        return factory();
+    }
+}(function() {
+    'use strict';
 
     var activityItems = [];
     var hideClass = 'hideMe';
@@ -26,8 +34,15 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryp
     }]);
 
     angular.module('jedi.activities').constant('jedi.activities.ActivitiesConfig', {
-        inProgressWarning: 'Ao realizar esta ação você perderá {{count}} atividade(s) pendentes.',
-        i18nDirective: ''
+        inProgressWarning: 'You will lost {{count}} activities. Would you like to continue?',
+        i18nDirective: '',
+        title: 'Activities',
+        minimizeLabel: 'Minimize',
+        closeLabel: 'Close',
+        successLabel: 'Success',
+        errorLabel: 'Error',
+        saveLabel: 'Save',
+        removeLabel: 'Remove'
     });
 
     angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($q, $http, $rootScope, $timeout, $indexedDB, $log) {
@@ -131,14 +146,6 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryp
             restrict: 'E',
             replace: true,
             compile: function (element, attrs) {
-                if (ActivitiesConfig.i18nDirective) {
-                    var newi18n = document.createElement(ActivitiesConfig.i18nDirective);
-                    var text = document.createTextNode("Atividades");
-                    newi18n.appendChild(text);
-                    var oldi18n = document.querySelector("i18n");
-                    document.querySelector("#activitiesHeaderContent").replaceChild(newi18n, oldi18n);
-                }
-
                 return function postLink(scope, element, attrs, activitiesCtrl) {
                     scope.$watch(function () {
                         return activityItems.length;
@@ -300,7 +307,51 @@ define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryp
                 }
             },
         };
-    }]).run([function () {
+    }]).run(['$templateCache', 'jedi.activities.ActivitiesConfig', function($templateCache, ActivitiesConfig) {
+        var tmpl = '<div ng-class="{ minimizeMe: activitiesCtrl.activitiesModel.minimize }" class="animate-slide panel-default collapsable hideMe">'+
+                   '    <div class="panel-heading activities-header">'+
+                   '        <div class="row">'+
+                   '            <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 pull-left glyphicon-pointer" ng-click="activitiesCtrl.activitiesModel.minimize = !activitiesCtrl.activitiesModel.minimize">'+
+                   '                <strong id="activitiesHeaderContent" class="activities-header-content">'+
+                   '                    <i class="fa" ng-class="{ \'fa-spin\' : activitiesCtrl.activitiesModel.minimize && activitiesCtrl.getInProgressItemsCount() > 0, \'fa-cog\':  activitiesCtrl.activitiesModel.minimize && activitiesCtrl.getInProgressItemsCount() > 0, \'fa-tasks\': !activitiesCtrl.activitiesModel.minimize || (activitiesCtrl.activitiesModel.minimize && !activitiesCtrl.getInProgressItemsCount()) }"></i>'+
+                   '                    <jd-i18n>'+
+                   '                        ' + ActivitiesConfig.title +
+                   '                    </jd-i18n>'+
+                   '                </strong>'+
+                   '            </div>'+
+                   '            <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">'+
+                   '                <span class="glyphicon glyphicon-pointer glyphicon-minus" jd-i18n title="'+ActivitiesConfig.minimizeLabel+'" ng-click="activitiesCtrl.activitiesModel.minimize = !activitiesCtrl.activitiesModel.minimize"></span>&nbsp;'+
+                   '                <span class="glyphicon glyphicon-pointer glyphicon-remove" jd-i18n title="'+ActivitiesConfig.closeLabel+'" ng-click="activitiesCtrl.close()"></span>'+
+                   '            </div>'+
+                   '        </div>'+
+                   '    </div>'+
+                   '    <div class="panel-body activities-scroll">'+
+                   '        <div ng-repeat="item in activityItems track by item.id">'+
+                   '            <div class="row">'+
+                   '                <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">'+
+                   '                    <span>{{item.fileName}} - {{item.duration}}</span>'+
+                   '                </div>'+
+                   '                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">'+
+                   '                    <span class="activities-progress" ng-if="item.status == \'progress\'"><i class="fa fa-cog fa-spin"></i></span>'+
+                   '                    <span class="activities-done glyphicon glyphicon-saved" ng-if="item.status == \'success\'" jd-i18n title="'+ActivitiesConfig.successLabel+'"></span>'+
+                   '                    <span class="activities-error glyphicon glyphicon-remove" ng-if="item.status == \'error\'" jd-i18n title="'+ActivitiesConfig.errorLabel+'"></span>'+
+                   '                    <span class="activities-trash glyphicon glyphicon-floppy-disk" ng-class="{\'glyphicon-pointer\' : item.status == \'success\' }" jd-i18n title="'+ActivitiesConfig.saveLabel+'" ng-click="activitiesCtrl.saveIconClick(item)"></span>'+
+                   '                    <span class="activities-trash glyphicon glyphicon-trash" ng-class="{\'glyphicon-pointer\' : item.status != \'progress\' }" jd-i18n title="'+ActivitiesConfig.removeLabel+'" ng-click="activitiesCtrl.removeIconClick(item)"></span>'+
+                   '                </div>'+
+                   '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">'+
+                   '                </div>'+
+                   '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">'+
+                   '                </div>'+
+                   '            </div>'+
+                   '            <hr class="row activities-divider" />'+
+                   '        </div>'+
+                   '    </div>'+
+                   '</div>';
 
+        if (ActivitiesConfig.i18nDirective) {
+            tmpl = tmpl.replace('jd-i18n', ActivitiesConfig.i18nDirective);
+        }
+
+        $templateCache.put('assets/libs/ng-jedi-activities/activities.html', tmpl);
     }]);
-});
+}));

@@ -1,6 +1,6 @@
 {
   "name": "ng-jedi-activities",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "homepage": "https://github.com/jediproject/ng-jedi-activities",
   "authors": [
     "Fábio Henrique da Silva Viana <fabioviana.bh@gmail.com>",
@@ -9,15 +9,18 @@
     "Bruno Camodeco dos Santos <brunocs@ciandt.com>",
     "Tanato Cartaxo <tanatopc@gmail.com>"
   ],
-  "description": "Easy way to manage time-consuming requests.",
-  "main": "activities.js",
+  "description": "Background tasks component written in angularjs.",
+  "main": ["activities.js", "activities.css"],
   "moduleType": [
     "globals"
   ],
   "keywords": [
     "angular",
     "activities",
-    "service"
+    "activity",
+    "tasks",
+    "task",
+    "background"
   ],
   "license": "MIT",
   "ignore": [
