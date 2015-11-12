@@ -1,4 +1,4 @@
-# ng-jedi-activities
+# [ng-jedi-activities](https://github.com/jediproject/ng-jedi-activities)
 Easy way to manage time-consuming requests.
 ###### Written in [AngularJs](https://angularjs.org/)
 
