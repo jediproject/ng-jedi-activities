@@ -25,7 +25,7 @@
             s4() + '-' + s4() + s4() + s4();
     }
 
-    angular.module('jedi.activities', []).config(['$indexedDBProvider', function ($indexedDBProvider) {
+    angular.module('jedi.activities', ['indexedDB']).config(['$indexedDBProvider', function ($indexedDBProvider) {
         $indexedDBProvider
             .connection('activities')
             .upgradeDatabase(1, function (event, db, tx) {
