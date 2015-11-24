@@ -42,6 +42,7 @@ angular.module('yourApp', ['jedi.activities']);
   1. [toggle](#toggle)
   1. [hasInProgressActivities](#hasinprogressactivities)
   1. [hasActivities](#hasactivities)
+  1. [validateActivities](#validateactivities)
   1. [ActivitiesConfig](#activitiesconfig)
 
 #### initActivity
@@ -95,6 +96,16 @@ Returns true if there is any activity in the directive despite their status. Fal
 ```javascript
 activitiesService.hasActivities();
 ```
+
+#### validateActivities
+
+The goal here is to preserve the identity of each user that creates an activity. Having that in mind we generate a MD5 hash of the user's login and store it alongside with the file itself. But you need to tell us the user credentials to validade, passing an object with the current user's login to validate.
+
+```javascript
+activitiesService.validateActivities(userIdentity);
+```
+
+It will be returned only the activities that have a match between the current user login hash and the saved MD5 hash.
 
 #### ActivitiesConfig
 
