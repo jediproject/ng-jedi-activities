@@ -2,12 +2,12 @@
     if (typeof define === 'function') {
         define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryptojslib'], factory);
     } else {
-        if (typeof module !== "undefined" && typeof exports !== "undefined" && module.exports === exports){
+        if (typeof module !== "undefined" && typeof exports !== "undefined" && module.exports === exports) {
             module.exports = 'jedi.activities';
         }
         return factory();
     }
-}(function() {
+} (function () {
     'use strict';
 
     var activityItems = [];
@@ -40,6 +40,7 @@
         minimizeLabel: 'Minimize',
         closeLabel: 'Close',
         successLabel: 'Success',
+        doneLabel: 'Done',
         errorLabel: 'Error',
         saveLabel: 'Save',
         removeLabel: 'Remove'
@@ -47,24 +48,22 @@
 
     angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($q, $http, $rootScope, $timeout, $indexedDB, $log) {
 
-        this.initActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin) {
+        this.initActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin, respType) {
 
-            var timeout = $timeout(onTimeout, 1000);
+            var timeout;
             var duration = moment.duration();
 
             var onTimeout = function () {
                 duration.add(1, 's');
                 activityItem.duration = "(" + (duration.hours() ? duration.hours() + ':' : '') + ('0' + duration.minutes()).slice(-2) + ':' + ('0' + duration.seconds()).slice(-2) + ")";
-                timeout = $timeout(onTimeout, 1000);
-
-                if (activityItem.status != 'progress') {
-                    $timeout.cancel(timeout);
+                if (activityItem.status === 'progress') {
+                    timeout = $timeout(onTimeout, 1000);
                 }
             };
 
             var activityItem = {
                 id: guid(),
-                fileName: activityName,
+                name: activityName,
                 status: 'progress',
                 duration: '(00:00)',
                 userLoginHash: CryptoJS.MD5(userLogin).toString()
@@ -76,7 +75,7 @@
                 method: method.toUpperCase(),
                 url: baseUrl + '/' + apiUrl,
                 data: params,
-                responseType: 'arraybuffer',
+                responseType: respType ? respType : 'arraybuffer',
                 ignoreLoadingBar: true,
                 showLoadingModal: false
             };
@@ -85,14 +84,25 @@
 
             var httpPromise = $http(request).success(function (data, status, headers, config) {
 
-                var contentDisposition = headers("content-disposition");
-                var filename = contentDisposition.substring((contentDisposition.indexOf('filename=') + 9));
+                var contentType = headers("content-type");
+                
+                // If data is an object and contentDisposition is not null means there's a file coming on the request to be downloaded
+                if (contentType && contentType.toLowerCase() === "application/octet-stream" &&
+                    typeof data === 'object') {
+                    var contentDisposition = headers("content-disposition");
+                    var filename = contentDisposition.substring((contentDisposition.indexOf('filename=') + 9));
 
-                activityItem.status = 'success';
-                activityItem.fileName = filename;
-                activityItem.data = new Blob([data], { type: headers("content-type") });
+                    activityItem.status = 'success';
+                    activityItem.name = filename;
+                    activityItem.data = new Blob([data], { type: headers("content-type") });
 
-                insertToIndexedDb(activityItem);
+                    insertToIndexedDb(activityItem);
+                } else {
+                    activityItem.status = 'done';
+                    activityItem.data = data;
+
+                    insertToIndexedDb(activityItem);
+                }
             }).error(function (data, status) {
                 activityItem.status = 'error';
                 activityItem.data = null;
@@ -102,9 +112,14 @@
 
             return $q.when(
                 httpPromise.then(function (response) {
-                    return duration.asMilliseconds();
+                    return {
+                        duration: duration.asMilliseconds(),
+                        name: activityItem.name,
+                        data: activityItem.data,
+                        status: activityItem.status
+                    }
                 })
-            );
+                );
         };
 
         this.clearActivities = function clearActivities() {
@@ -145,11 +160,10 @@
         return {
             restrict: 'E',
             replace: true,
-            compile: function (element, attrs) {
-                return function postLink(scope, element, attrs, activitiesCtrl) {
-                    scope.$watch(function () {
-                        return activityItems.length;
-                    },
+            link: function (scope, element, attrs, activitiesCtrl) {
+                scope.$watch(function () {
+                    return activityItems.length;
+                },
                     function (value) {
                         if (value && value > 0) {
                             element.removeClass(hideClass);
@@ -164,21 +178,19 @@
                         }
                     });
 
-                    window.onbeforeunload = function (evt) {
-                        var obj = { count: activitiesCtrl.getInProgressItemsCount() };
+                window.onbeforeunload = function (evt) {
+                    var obj = { count: activitiesCtrl.getInProgressItemsCount() };
 
-                        if (obj.count > 0) {
-                            return $interpolate(ActivitiesConfig.inProgressWarning)(obj);
-                        }
+                    if (obj.count > 0) {
+                        return $interpolate(ActivitiesConfig.inProgressWarning)(obj);
                     }
-
-                    scope.$on('jedi.activities.clearActivities', activitiesCtrl.clear);
-
-                    scope.$on('jedi.activities.toggleMonitor', activitiesCtrl.toggle);
-
-                    scope.$on('jedi.activities.validateActivities', activitiesCtrl.validateActivities);
                 }
 
+                scope.$on('jedi.activities.clearActivities', activitiesCtrl.clear);
+
+                scope.$on('jedi.activities.toggleMonitor', activitiesCtrl.toggle);
+
+                scope.$on('jedi.activities.validateActivities', activitiesCtrl.validateActivities);
             },
             controller: ['$scope', '$attrs', '$element', '$timeout', '$log', '$indexedDB', '$rootScope', function Controller(scope, attrs, element, $timeout, $log, $indexedDB, $rootScope) {
 
@@ -210,7 +222,7 @@
                     if (item.status == 'progress') {
                         return false;
                     }
-                    $log.info("Removendo item " + item.fileName);
+                    $log.info("Removendo item " + item.name);
                     var index = activityItems.indexOf(item);
                     activityItems.splice(index, 1);
                     $indexedDB.openStore(storeName, function (store) {
@@ -232,8 +244,8 @@
                     if (item.status != 'success') {
                         return false;
                     }
-                    $log.info("Salvando item " + item.fileName);
-                    saveAs(item.data, item.fileName);
+                    $log.info("Salvando item " + item.name);
+                    saveAs(item.data, item.name);
                 }
 
                 function refresh() {
@@ -307,46 +319,47 @@
                 }
             },
         };
-    }]).run(['$templateCache', 'jedi.activities.ActivitiesConfig', function($templateCache, ActivitiesConfig) {
-        var tmpl = '<div ng-class="{ minimizeMe: activitiesCtrl.activitiesModel.minimize }" class="animate-slide panel-default collapsable hideMe">'+
-                   '    <div class="panel-heading activities-header">'+
-                   '        <div class="row">'+
-                   '            <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 pull-left glyphicon-pointer" ng-click="activitiesCtrl.activitiesModel.minimize = !activitiesCtrl.activitiesModel.minimize">'+
-                   '                <strong id="activitiesHeaderContent" class="activities-header-content">'+
-                   '                    <i class="fa" ng-class="{ \'fa-spin\' : activitiesCtrl.activitiesModel.minimize && activitiesCtrl.getInProgressItemsCount() > 0, \'fa-cog\':  activitiesCtrl.activitiesModel.minimize && activitiesCtrl.getInProgressItemsCount() > 0, \'fa-tasks\': !activitiesCtrl.activitiesModel.minimize || (activitiesCtrl.activitiesModel.minimize && !activitiesCtrl.getInProgressItemsCount()) }"></i>'+
-                   '                    <jd-i18n>'+
-                   '                        ' + ActivitiesConfig.title +
-                   '                    </jd-i18n>'+
-                   '                </strong>'+
-                   '            </div>'+
-                   '            <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">'+
-                   '                <span class="glyphicon glyphicon-pointer glyphicon-minus" jd-i18n title="'+ActivitiesConfig.minimizeLabel+'" ng-click="activitiesCtrl.activitiesModel.minimize = !activitiesCtrl.activitiesModel.minimize"></span>&nbsp;'+
-                   '                <span class="glyphicon glyphicon-pointer glyphicon-remove" jd-i18n title="'+ActivitiesConfig.closeLabel+'" ng-click="activitiesCtrl.close()"></span>'+
-                   '            </div>'+
-                   '        </div>'+
-                   '    </div>'+
-                   '    <div class="panel-body activities-scroll">'+
-                   '        <div ng-repeat="item in activityItems track by item.id">'+
-                   '            <div class="row">'+
-                   '                <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">'+
-                   '                    <span>{{item.fileName}} - {{item.duration}}</span>'+
-                   '                </div>'+
-                   '                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">'+
-                   '                    <span class="activities-progress" ng-if="item.status == \'progress\'"><i class="fa fa-cog fa-spin"></i></span>'+
-                   '                    <span class="activities-done glyphicon glyphicon-saved" ng-if="item.status == \'success\'" jd-i18n title="'+ActivitiesConfig.successLabel+'"></span>'+
-                   '                    <span class="activities-error glyphicon glyphicon-remove" ng-if="item.status == \'error\'" jd-i18n title="'+ActivitiesConfig.errorLabel+'"></span>'+
-                   '                    <span class="activities-trash glyphicon glyphicon-floppy-disk" ng-class="{\'glyphicon-pointer\' : item.status == \'success\' }" jd-i18n title="'+ActivitiesConfig.saveLabel+'" ng-click="activitiesCtrl.saveIconClick(item)"></span>'+
-                   '                    <span class="activities-trash glyphicon glyphicon-trash" ng-class="{\'glyphicon-pointer\' : item.status != \'progress\' }" jd-i18n title="'+ActivitiesConfig.removeLabel+'" ng-click="activitiesCtrl.removeIconClick(item)"></span>'+
-                   '                </div>'+
-                   '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">'+
-                   '                </div>'+
-                   '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">'+
-                   '                </div>'+
-                   '            </div>'+
-                   '            <hr class="row activities-divider" />'+
-                   '        </div>'+
-                   '    </div>'+
-                   '</div>';
+    }]).run(['$templateCache', 'jedi.activities.ActivitiesConfig', function ($templateCache, ActivitiesConfig) {
+        var tmpl = '<div ng-class="{ minimizeMe: activitiesCtrl.activitiesModel.minimize }" class="animate-slide panel-default collapsable hideMe">' +
+            '    <div class="panel-heading activities-header">' +
+            '        <div class="row">' +
+            '            <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 pull-left activities-active" ng-click="activitiesCtrl.activitiesModel.minimize = !activitiesCtrl.activitiesModel.minimize">' +
+            '                <strong id="activitiesHeaderContent" class="activities-header-content">' +
+            '                    <i class="fa" ng-class="{ \'fa-spin\' : activitiesCtrl.activitiesModel.minimize && activitiesCtrl.getInProgressItemsCount() > 0, \'fa-cog\':  activitiesCtrl.activitiesModel.minimize && activitiesCtrl.getInProgressItemsCount() > 0, \'fa-tasks\': !activitiesCtrl.activitiesModel.minimize || (activitiesCtrl.activitiesModel.minimize && !activitiesCtrl.getInProgressItemsCount()) }"></i>' +
+            '                    <jd-i18n>' +
+            '                        ' + ActivitiesConfig.title +
+            '                    </jd-i18n>' +
+            '                </strong>' +
+            '            </div>' +
+            '            <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">' +
+            '                <span class="glyphicon activities-active glyphicon-minus" jd-i18n title="' + ActivitiesConfig.minimizeLabel + '" ng-click="activitiesCtrl.activitiesModel.minimize = !activitiesCtrl.activitiesModel.minimize"></span>&nbsp;' +
+            '                <span class="glyphicon activities-active glyphicon-remove" jd-i18n title="' + ActivitiesConfig.closeLabel + '" ng-click="activitiesCtrl.close()"></span>' +
+            '            </div>' +
+            '        </div>' +
+            '    </div>' +
+            '    <div class="panel-body activities-scroll">' +
+            '        <div ng-repeat="item in activityItems track by item.id">' +
+            '            <div class="row">' +
+            '                <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">' +
+            '                    <span>{{item.name}} - {{item.duration}}</span>' +
+            '                </div>' +
+            '                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">' +
+            '                    <span class="activities-progress" ng-if="item.status == \'progress\'"><i class="fa fa-cog fa-spin"></i></span>' +
+            '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'success\'" jd-i18n title="' + ActivitiesConfig.successLabel + '"></span>' +
+            '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'done\'" jd-i18n title="' + ActivitiesConfig.doneLabel + '"></span>' +
+            '                    <span class="activities-error glyphicon glyphicon-remove" ng-if="item.status == \'error\'" jd-i18n title="' + ActivitiesConfig.errorLabel + '"></span>' +
+            '                    <span class="activities-inactive glyphicon glyphicon-save" ng-class="{\'activities-active\' : item.status == \'success\' }" jd-i18n title="' + ActivitiesConfig.saveLabel + '" ng-click="activitiesCtrl.saveIconClick(item)"></span>' +
+            '                    <span class="activities-inactive glyphicon glyphicon-menu-right" ng-class="{\'activities-active\' : item.status != \'progress\' }" jd-i18n title="' + ActivitiesConfig.removeLabel + '" ng-click="activitiesCtrl.removeIconClick(item)"></span>' +
+            '                </div>' +
+            '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">' +
+            '                </div>' +
+            '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">' +
+            '                </div>' +
+            '            </div>' +
+            '            <hr class="row activities-divider" />' +
+            '        </div>' +
+            '    </div>' +
+            '</div>';
 
         if (ActivitiesConfig.i18nDirective) {
             tmpl = tmpl.replace('jd-i18n', ActivitiesConfig.i18nDirective);

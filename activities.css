@@ -73,7 +73,7 @@
     color: rgb(233, 66, 46);
 }
 
-.activities-trash {
+.activities-inactive {
     padding-top: 8px;
     font-size: 15px !important;
     color: rgb(0, 0, 0);
@@ -84,7 +84,7 @@
     font-size: 18px;
 }
 
-.glyphicon-pointer {
+.activities-active {
     cursor: pointer;
     opacity: 1;
 }
