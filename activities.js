@@ -84,16 +84,15 @@
 
             var httpPromise = $http(request).success(function (data, status, headers, config) {
 
-                var contentType = headers("content-type");
-                
-                // If data is an object and contentDisposition is not null means there's a file coming on the request to be downloaded
-                if (contentType && contentType.toLowerCase() === "application/octet-stream" &&
-                    typeof data === 'object') {
+                if (request.responseType.toLowerCase() === 'arraybuffer' || request.responseType.toLowerCase() === 'blob') {
                     var contentDisposition = headers("content-disposition");
-                    var filename = contentDisposition.substring((contentDisposition.indexOf('filename=') + 9));
-
+                    var filename = contentDisposition ? contentDisposition.substring((contentDisposition.indexOf('filename=') + 9)) : '';
+                    
+                    if (filename) {
+                        activityItem.name = filename;
+                    }
+                    
                     activityItem.status = 'success';
-                    activityItem.name = filename;
                     activityItem.data = new Blob([data], { type: headers("content-type") });
 
                     insertToIndexedDb(activityItem);
