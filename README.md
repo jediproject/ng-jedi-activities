@@ -1,5 +1,7 @@
 # [ng-jedi-activities](https://github.com/jediproject/ng-jedi-activities)
-Easy way to manage time-consuming requests.
+
+Easy way to manage time-consuming requests. Create a small pane on bottom of the page and displays info on requests that would take a long time on the server, keeping your page and the user free to go somewhere else on the website. After the request is over and everything is right you have the option to download the data received as a file, or take any other action using angularjs promises.
+
 ###### Written in [AngularJs](https://angularjs.org/)
 
   1. [Install](#install)
