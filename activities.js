@@ -348,7 +348,7 @@
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'done\'" jd-i18n title="' + ActivitiesConfig.doneLabel + '"></span>' +
             '                    <span class="activities-error glyphicon glyphicon-remove" ng-if="item.status == \'error\'" jd-i18n title="' + ActivitiesConfig.errorLabel + '"></span>' +
             '                    <span class="activities-inactive glyphicon glyphicon-save" ng-class="{\'activities-active\' : item.status == \'success\' }" jd-i18n title="' + ActivitiesConfig.saveLabel + '" ng-click="activitiesCtrl.saveIconClick(item)"></span>' +
-            '                    <span class="activities-inactive glyphicon glyphicon-menu-right" ng-class="{\'activities-active\' : item.status != \'progress\' }" jd-i18n title="' + ActivitiesConfig.removeLabel + '" ng-click="activitiesCtrl.removeIconClick(item)"></span>' +
+            '                    <span class="activities-inactive glyphicon glyphicon-trash" ng-class="{\'activities-active\' : item.status != \'progress\' }" jd-i18n title="' + ActivitiesConfig.removeLabel + '" ng-click="activitiesCtrl.removeIconClick(item)"></span>' +
             '                </div>' +
             '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">' +
             '                </div>' +
