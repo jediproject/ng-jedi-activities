@@ -1,8 +1,3 @@
-/*
- ng-jedi-activities v0.0.5
- Background tasks component written in angularjs
- https://github.com/jediproject/ng-jedi-activities
-*/
 (function (factory) {
     if (typeof define === 'function') {
         define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryptojslib'], factory);
