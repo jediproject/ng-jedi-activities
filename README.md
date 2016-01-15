@@ -24,7 +24,6 @@ bower install ng-jedi-activities --save
    ```html
 <script src='assets/libs/ng-jedi-activities/activities.js'></script>   
    ```
-   - Note that the base directory used was assets/libs, you should change bower_components to assets/libs or move from bower_components to assets/libs with [Grunt](http://gruntjs.com/).
 * Add the directive to your HTML:
 
     ```html
