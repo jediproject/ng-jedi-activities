@@ -5,7 +5,7 @@
     height: 180px;
     bottom: 0;
     right: 0;
-    z-index: 1001 !important;
+    z-index: 10000 !important;
     box-shadow: -2px -2px 2px #808080;
     display: inline-block;
     overflow: hidden;
