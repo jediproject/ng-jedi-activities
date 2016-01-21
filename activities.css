@@ -108,3 +108,13 @@
         opacity: 1;
     }
 }
+
+@media (max-width:767px) {
+    .animate-slide {
+        width: 100%;
+    }
+    
+    .animate-slide.minimizeMe {
+        width: 50%;
+    }
+}
