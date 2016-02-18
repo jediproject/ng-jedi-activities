@@ -1,6 +1,6 @@
 (function (factory) {
     if (typeof define === 'function') {
-        define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db', 'cryptojslib'], factory);
+        define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], factory);
     } else {
         if (typeof module !== "undefined" && typeof exports !== "undefined" && module.exports === exports) {
             module.exports = 'jedi.activities';
