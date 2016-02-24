@@ -1,5 +1,5 @@
 /*
- ng-jedi-activities v0.0.8
+ ng-jedi-activities v0.0.9
  Background tasks component written in angularjs
  https://github.com/jediproject/ng-jedi-activities
 */
