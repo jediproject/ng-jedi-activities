@@ -1,5 +1,5 @@
 /*
- ng-jedi-activities v0.0.9
+ ng-jedi-activities v0.0.10
  Background tasks component written in angularjs
  https://github.com/jediproject/ng-jedi-activities
 */
@@ -344,14 +344,14 @@
             '    <div class="panel-body activities-scroll">' +
             '        <div ng-repeat="item in activityItems track by item.id">' +
             '            <div class="row">' +
-            '                <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">' +
-            '                    <span>{{item.name}} - {{item.duration}}</span>' +
-            '                </div>' +
-            '                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">' +
-            '                    <span class="activities-progress" ng-if="item.status == \'progress\'"><i class="fa fa-cog fa-spin"></i></span>' +
+            '                <div class="col-md-10 col-xs-10 col-sm-10 col-lg-10 activities-content">' +
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'success\'" jd-i18n title="' + ActivitiesConfig.successLabel + '"></span>' +
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'done\'" jd-i18n title="' + ActivitiesConfig.doneLabel + '"></span>' +
+            '                    <span class="activities-progress" ng-if="item.status == \'progress\'"><i class="fa fa-cog fa-spin"></i></span>' +
             '                    <span class="activities-error glyphicon glyphicon-exclamation-sign" ng-if="item.status == \'error\'" jd-i18n title="' + ActivitiesConfig.errorLabel + '"></span>' +
+            '                    <span>{{item.name}} - {{item.duration}}</span>' +
+            '                </div>' +
+            '                <div class="col-md-2 col-xs-2 col-sm-2 col-lg-2 text-right">' +
             '                    <span class="activities-inactive glyphicon glyphicon-save" ng-class="{\'activities-active\' : item.status == \'success\' }" jd-i18n title="' + ActivitiesConfig.saveLabel + '" ng-click="activitiesCtrl.saveIconClick(item)"></span>' +
             '                    <span class="activities-inactive glyphicon glyphicon-remove" ng-class="{\'activities-active\' : item.status != \'progress\' }" jd-i18n title="' + ActivitiesConfig.removeLabel + '" ng-click="activitiesCtrl.removeIconClick(item)"></span>' +
             '                </div>' +
