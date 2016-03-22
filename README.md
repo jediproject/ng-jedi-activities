@@ -39,6 +39,7 @@ angular.module('yourApp', ['jedi.activities']);
 ### How To Use
 
   1. [initActivity](#initactivity)
+  1. [initActivityAsync](#initactivityasync)
   1. [clearActivities](#clearactivities)
   1. [toggle](#toggle)
   1. [hasInProgressActivities](#hasinprogressactivities)
@@ -55,7 +56,6 @@ Keep in mind that the user will be notified if he tries to close the page, refre
 ```javascript
 app.controller(['jedi.activities.ActivitiesService', function(activitiesService){
     activitiesService.initActivity(urlBase, apiUrl, method, params, name);
-
     //urlBase -> The base url to your back-end service.
     //apiUrl -> The action that you want to trigger.
     //method -> GET/POST...
@@ -65,6 +65,21 @@ app.controller(['jedi.activities.ActivitiesService', function(activitiesService)
 ```
 
 It is as simple as that.
+
+#### initActivityAsync
+
+This is what you are going to use to make asynchronous requests to your back-end service.
+
+```javascript
+app.controller(['jedi.activities.ActivitiesService', function(activitiesService){
+    activitiesService.initActivity(urlBase, apiUrl, method, params, name);
+    //urlBase -> The base url to your back-end service.
+    //apiUrl -> The action that you want to trigger.
+    //method -> GET/POST...
+    //params -> Additional parameters for the request.
+    //name -> The name that will be displayed for the activity.
+}])
+```
 
 #### clearActivities
 

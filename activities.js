@@ -3,7 +3,7 @@
  Background tasks component written in angularjs
  https://github.com/jediproject/ng-jedi-activities
 */
-(function (factory) {
+(function(factory) {
     if (typeof define === 'function') {
         define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], factory);
     } else {
@@ -12,7 +12,7 @@
         }
         return factory();
     }
-} (function () {
+} (function() {
     'use strict';
 
     var activityItems = [];
@@ -30,10 +30,10 @@
             s4() + '-' + s4() + s4() + s4();
     }
 
-    angular.module('jedi.activities', ['indexedDB']).config(['$indexedDBProvider', function ($indexedDBProvider) {
+    angular.module('jedi.activities', ['indexedDB']).config(['$indexedDBProvider', function($indexedDBProvider) {
         $indexedDBProvider
             .connection('activities')
-            .upgradeDatabase(1, function (event, db, tx) {
+            .upgradeDatabase(1, function(event, db, tx) {
                 var objStore = db.createObjectStore(storeName, { keyPath: 'id' });
             });
     }]);
@@ -51,14 +51,14 @@
         removeLabel: 'Remove'
     });
 
-    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($q, $http, $rootScope, $timeout, $indexedDB, $log) {
+    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$indexedDB', '$log', function($q, $http, $rootScope, $timeout, $indexedDB, $log) {
 
-        this.initActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin, respType) {
+        this.initActivity = function(baseUrl, apiUrl, method, params, activityName, userLogin, respType) {
 
             var timeout;
             var duration = moment.duration();
 
-            var onTimeout = function () {
+            var onTimeout = function() {
                 duration.add(1, 's');
                 activityItem.duration = "(" + (duration.hours() ? duration.hours() + ':' : '') + ('0' + duration.minutes()).slice(-2) + ':' + ('0' + duration.seconds()).slice(-2) + ")";
                 if (activityItem.status === 'progress') {
@@ -71,7 +71,8 @@
                 name: activityName,
                 status: 'progress',
                 duration: '(00:00)',
-                userLoginHash: CryptoJS.MD5(userLogin).toString()
+                userLoginHash: CryptoJS.MD5(userLogin).toString(),
+                async: false
             };
 
             activityItems.push(activityItem);
@@ -87,16 +88,16 @@
 
             $timeout(onTimeout);
 
-            var httpPromise = $http(request).success(function (data, status, headers, config) {
+            var httpPromise = $http(request).success(function(data, status, headers, config) {
 
                 if (request.responseType.toLowerCase() === 'arraybuffer' || request.responseType.toLowerCase() === 'blob') {
                     var contentDisposition = headers("content-disposition");
                     var filename = contentDisposition ? contentDisposition.substring((contentDisposition.indexOf('filename=') + 9)) : '';
-                    
+
                     if (filename) {
                         activityItem.name = filename;
                     }
-                    
+
                     activityItem.status = 'success';
                     activityItem.data = new Blob([data], { type: headers("content-type") });
 
@@ -107,7 +108,7 @@
 
                     insertToIndexedDb(activityItem);
                 }
-            }).error(function (data, status) {
+            }).error(function(data, status) {
                 activityItem.status = 'error';
                 activityItem.data = null;
 
@@ -115,7 +116,7 @@
             });
 
             return $q.when(
-                httpPromise.then(function (response) {
+                httpPromise.then(function(response) {
                     return {
                         duration: duration.asMilliseconds(),
                         name: activityItem.name,
@@ -123,7 +124,61 @@
                         status: activityItem.status
                     }
                 })
-                );
+            );
+        };
+
+        this.initActivityAsync = function(baseUrl, apiUrl, method, params, activityName, userLogin) {
+
+            var timeout;
+            var duration = moment.duration();
+
+            var onTimeout = function() {
+                duration.add(1, 's');
+                activityItem.duration = "(" + (duration.hours() ? duration.hours() + ':' : '') + ('0' + duration.minutes()).slice(-2) + ':' + ('0' + duration.seconds()).slice(-2) + ")";
+                if (activityItem.status === 'progress') {
+                    timeout = $timeout(onTimeout, 1000);
+                }
+            };
+
+            var activityItem = {
+                id: guid(),
+                name: activityName,
+                status: 'progress',
+                duration: '(00:00)',
+                userLoginHash: CryptoJS.MD5(userLogin).toString(),
+                async: true
+            };
+
+            activityItems.push(activityItem);
+
+            var request = {
+                method: method.toUpperCase(),
+                url: baseUrl + '/' + apiUrl,
+                data: params,
+                ignoreLoadingBar: true,
+                showLoadingModal: false
+            };
+
+            $timeout(onTimeout);
+
+            // Asynchronous activities just return on init when error. 
+            var httpPromise = $http(request).error(function(data, status) {
+                activityItem.status = 'error';
+                activityItem.data = null;
+
+                insertToIndexedDb(activityItem);
+            });
+
+            return $q.when(
+                httpPromise.then(function(response) {
+                    return {
+                        duration: duration.asMilliseconds(),
+                        name: activityItem.name,
+                        data: activityItem.data,
+                        status: activityItem.status
+                    }
+                })
+            );
         };
 
         this.clearActivities = function clearActivities() {
@@ -140,7 +195,7 @@
 
         this.hasInProgressActivities = function hasInProgressActivities() {
             var count = 0;
-            angular.forEach(activityItems, function (item, index) {
+            angular.forEach(activityItems, function(item, index) {
                 if (item.status === "progress") {
                     count++;
                 }
@@ -153,22 +208,22 @@
         }
 
         function insertToIndexedDb(item) {
-            $indexedDB.openStore(storeName, function (store) {
-                store.insert({ "id": item.id, "activityItem": item }).then(function (e) {
+            $indexedDB.openStore(storeName, function(store) {
+                store.insert({ "id": item.id, "activityItem": item }).then(function(e) {
                     $log.info('Inserindo atividade id: ' + e);
                 });
             });
         };
 
-    }]).directive('jdActivity', ['$log', '$interpolate', 'jedi.activities.ActivitiesConfig', function ($log, $interpolate, ActivitiesConfig) {
+    }]).directive('jdActivity', ['$log', '$interpolate', 'jedi.activities.ActivitiesConfig', function($log, $interpolate, ActivitiesConfig) {
         return {
             restrict: 'E',
             replace: true,
-            link: function (scope, element, attrs, activitiesCtrl) {
-                scope.$watch(function () {
+            link: function(scope, element, attrs, activitiesCtrl) {
+                scope.$watch(function() {
                     return activityItems.length;
                 },
-                    function (value) {
+                    function(value) {
                         if (value && value > 0) {
                             element.removeClass(hideClass);
 
@@ -182,7 +237,7 @@
                         }
                     });
 
-                window.onbeforeunload = function (evt) {
+                window.onbeforeunload = function(evt) {
                     var obj = { count: activitiesCtrl.getInProgressItemsCount() };
 
                     if (obj.count > 0) {
@@ -229,14 +284,14 @@
                     $log.info("Removendo item " + item.name);
                     var index = activityItems.indexOf(item);
                     activityItems.splice(index, 1);
-                    $indexedDB.openStore(storeName, function (store) {
+                    $indexedDB.openStore(storeName, function(store) {
                         store.delete(item.id);
                     });
                 }
 
                 function getInProgressItemsCount() {
                     var count = 0;
-                    angular.forEach(activityItems, function (item, index) {
+                    angular.forEach(activityItems, function(item, index) {
                         if (item.status === "progress") {
                             count++;
                         }
@@ -270,7 +325,7 @@
                     for (var i = activityItems.length - 1; i >= 0; i--) {
                         var id = activityItems[i].id;
                         activityItems.splice(i, 1);
-                        $indexedDB.openStore(storeName, function (store) {
+                        $indexedDB.openStore(storeName, function(store) {
                             store.delete(id);
                         });
                     }
@@ -291,9 +346,9 @@
                 }
 
                 function validateActivities(evt, userIdentity) {
-                    $indexedDB.openStore(storeName, function (store) {
-                        store.getAll().then(function (objects) {
-                            angular.forEach(objects, function (item) {
+                    $indexedDB.openStore(storeName, function(store) {
+                        store.getAll().then(function(objects) {
+                            angular.forEach(objects, function(item) {
                                 if (userIdentity) {
                                     var currentUserLoginHash = CryptoJS.MD5(userIdentity.login).toString();
                                     if (item.activityItem.userLoginHash === currentUserLoginHash) {
@@ -315,7 +370,7 @@
             }],
             controllerAs: 'activitiesCtrl',
             bindToController: true,
-            templateUrl: function (elem, attrs) {
+            templateUrl: function(elem, attrs) {
                 if (attrs.templateUrl) {
                     return attrs.templateUrl;
                 } else {
@@ -323,7 +378,7 @@
                 }
             },
         };
-    }]).run(['$templateCache', 'jedi.activities.ActivitiesConfig', function ($templateCache, ActivitiesConfig) {
+    }]).run(['$templateCache', 'jedi.activities.ActivitiesConfig', function($templateCache, ActivitiesConfig) {
         var tmpl = '<div ng-class="{ minimizeMe: activitiesCtrl.activitiesModel.minimize }" class="animate-slide panel-default collapsable hideMe">' +
             '    <div class="panel-heading activities-header">' +
             '        <div class="row">' +
