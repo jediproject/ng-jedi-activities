@@ -16,6 +16,7 @@
     'use strict';
 
     var activityItems = [];
+    var activitiesRefreshUrl = [];
     var hideClass = 'hideMe';
     var minimizeClass = 'minimizeMe';
     var storeName = 'activities';
@@ -54,7 +55,7 @@
     angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$indexedDB', '$log', function($q, $http, $rootScope, $timeout, $indexedDB, $log) {
 
         this.initActivity = function(baseUrl, apiUrl, method, params, activityName, userLogin, respType) {
-
+  
             var timeout;
             var duration = moment.duration();
 
@@ -127,8 +128,13 @@
             );
         };
 
-        this.initActivityAsync = function(baseUrl, apiUrl, method, params, activityName, userLogin) {
+        this.initAsyncActivity = function(baseUrl, apiUrl, method, params, activityName, userLogin) {
 
+            // Check if exists baseUrl in refresh APIs, Asynchronous activities must have a refresh url.
+            if(_.some(activitiesRefreshUrl, function(s) { return s.indexOf(baseUrl) !== -1; })){
+                throw "Asynchronous activities must have a refresh url with the same baseUrl of activity. This must be set on loadAsyncActivities";
+            }
+            
             var timeout;
             var duration = moment.duration();
 
