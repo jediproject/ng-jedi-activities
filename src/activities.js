@@ -443,7 +443,7 @@
                 function getInProgressItemsCount() {
                     var count = 0;
                     angular.forEach(activityItems, function (item, index) {
-                        if (item.status === "progress") {
+                        if (item.status === "progress" && (!item.async || (async && item.async))) {
                             count++;
                         }
                     });
@@ -596,7 +596,7 @@
             '        <div ng-repeat="item in activityItems track by item.id">' +
             '            <div class="row" ng-class="{\'is-removing\' : item.isRemoving}">' +
             '                <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">' +
-            '                    <span>{{item.name}} - {{item.duration}}</span>' +
+            '                    <span>{{item.name}} {{item.duration}}</span>' +
             '                    <span class="activities-progress" ng-if="item.status == \'progress\'"><i class="fa fa-cog fa-spin"></i></span>' +
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'success\'" jd-i18n title="' + ActivitiesConfig.successLabel + '"></span>' +
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'done\'" jd-i18n title="' + ActivitiesConfig.doneLabel + '"></span>' +
