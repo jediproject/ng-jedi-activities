@@ -11,7 +11,8 @@
     'use strict';
 
     var activityItems = [];
-    var activitiesRefreshUrl = [];
+    var refreshServices = [];
+    var interval;
     var hideClass = 'hideMe';
     var minimizeClass = 'minimizeMe';
     var storeName = 'activities';
@@ -25,6 +26,40 @@
         return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
             s4() + '-' + s4() + s4() + s4();
     }
+
+    var updateArray = function (destination, source) {
+        if (source.length > 0) {
+            // Update destination with activities
+            angular.forEach(source, function (element) {
+                upsert(destination,
+                    function (item) {
+                        return element.id === item.id
+                    },
+                    element);
+            });
+            // Remove from destination activities not retrieved
+            _.remove(destination, function (item) {
+                if (source[0].baseUrl) {
+                    return source[0].baseUrl === item.baseUrl
+                        && !_.any(source, function (element) {
+                            return element.id === item.id;
+                        });
+                }
+                return false;
+            });
+        }
+    };
+
+    var upsert = function (arr, key, newval) {
+        if (_.any(arr, key)) {
+            var item = _.find(arr, key);
+            //var index = _.indexOf(arr, item);
+            _.merge(item, newval)
+            //arr.splice(index, 1, item);
+        } else {
+            arr.push(newval);
+        }
+    };
 
     angular.module('jedi.activities', ['indexedDB']).config(['$indexedDBProvider', function ($indexedDBProvider) {
         $indexedDBProvider
@@ -48,10 +83,13 @@
         errorLabel: 'Error',
         saveLabel: 'Save',
         removeLabel: 'Remove',
+        refreshTime: 10000,
         clearAllLabel: 'Clear All'
     });
 
-    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$indexedDB', '$log', function ($q, $http, $rootScope, $timeout, $indexedDB, $log) {
+    angular.module('jedi.activities').service('jedi.activities.ActivitiesService', ['$q', '$http', '$rootScope', '$timeout', '$interval', '$indexedDB', '$log', 'jedi.activities.ActivitiesConfig', function ($q, $http, $rootScope, $timeout, $interval, $indexedDB, $log, ActivitiesConfig) {
+
+        var $this = this;
 
         this.initActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin, respType) {
 
@@ -72,10 +110,11 @@
                 status: 'progress',
                 duration: '(00:00)',
                 userLoginHash: CryptoJS.MD5(userLogin).toString(),
-                async: false
+                async: false,
+                initialDate: Date.now()
             };
 
-            activityItems.push(activityItem);
+            activityItems.unshift(activityItem);
 
             var request = {
                 method: method.toUpperCase(),
@@ -130,7 +169,7 @@
         this.initAsyncActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin) {
 
             // Check if exists baseUrl in refresh APIs, Asynchronous activities must have a refresh url.
-            if (_.some(activitiesRefreshUrl, function (s) { return s.indexOf(baseUrl) !== -1; })) {
+            if (!interval && _.any(activitiesRefreshUrl, function (s) { return s.indexOf(baseUrl) !== -1; })) {
                 throw "Asynchronous activities must have a refresh url with the same baseUrl of activity. This must be set on loadAsyncActivities";
             }
 
@@ -152,10 +191,11 @@
                 duration: '(00:00)',
                 userLoginHash: CryptoJS.MD5(userLogin).toString(),
                 async: true,
+                initialDate: Date.now(),
                 baseUrl: baseUrl
             };
 
-            activityItems.push(activityItem);
+            activityItems.unshift(activityItem);
 
             var request = {
                 method: method.toUpperCase(),
@@ -168,7 +208,16 @@
             $timeout(onTimeout);
 
             // Asynchronous activities just return on init when error. 
-            var httpPromise = $http(request).error(function (data, status) {
+            var httpPromise = $http(request).success(function (result) {
+                if (result.data) {
+                    upsert(activityItems,
+                    function (item) {
+                        return result.data.id === item.id
+                    },
+                    result.data);
+                    refresh();
+                }
+            }).error(function (result, status) {
                 activityItem.status = 'error';
                 activityItem.data = null;
 
@@ -187,8 +236,69 @@
             );
         };
 
+        this.loadAsyncActivities = function (baseUrl, apiRefreshUrl, method, params, userLogin) {
+
+            // Create request
+            var request = {
+                method: method.toUpperCase(),
+                url: baseUrl + '/' + apiRefreshUrl,
+                data: params,
+                responseType: 'json',
+                ignoreLoadingBar: true,
+                showLoadingModal: false
+            };
+
+            // Do first request on loadAsyncActivities
+            $http(request).then(refreshSuccess, refreshError);
+
+            // Add request to array of refresh requests.
+            if (!_.any(refreshServices, request))
+                refreshServices.push(request);
+
+            // Start interval to refresh activities if not started
+            if (!interval) {
+                interval = $interval(function () {
+                    angular.forEach(refreshServices, function (request) {
+                        $http(request).then(refreshSuccess, refreshError);
+                    });
+                }, ActivitiesConfig.refreshTime);
+            }
+
+            // Do first request on loadAsyncActivities
+            var refreshSuccess = function (result) {
+
+                // Create array of activities with request result
+                var activities = _.transform(result.data, function (ret, item, i) {
+                    ret.push({
+                        id: item.id,
+                        name: item.name,
+                        status: item.status,
+                        userLoginHash: CryptoJS.MD5(userLogin).toString(),
+                        async: true,
+                        initialDate: (new Date(item.initialDate)).getTime(),
+                        baseUrl: baseUrl
+                    });
+                }, []);
+
+                // Add/Update/Delete activities result in activity array
+                updateArray(activityItems, activities);
+
+                // Order activities
+                activityItems = _.sortByOrder(activityItems, ['initialDate'], ['desc']);
+                $this.refresh();
+
+            };
+            var refreshError = function (data) {
+                throw "Error when getting activities from server."
+            };
+        };
+
         this.clearAll = function clearAll() {
             $rootScope.$broadcast('jedi.activities.clearAll');
+        };
+
+        this.refresh = function refresh() {
+            $rootScope.$broadcast('jedi.activities.refresh');
         };
 
         this.toggle = function toggleMonitor() {
@@ -197,6 +307,12 @@
 
         this.validateActivities = function validateActivities(userIdentity) {
             $rootScope.$broadcast('jedi.activities.validateActivities', userIdentity);
+        };
+
+        this.cancelRefreshActivities = function cancelRefreshActivities() {
+            if (!interval) {
+                $interval.cancel(interval);
+            }
         };
 
         this.hasInProgressActivities = function hasInProgressActivities() {
@@ -254,6 +370,8 @@
                 scope.$on('jedi.activities.clearAll', activitiesCtrl.clearAll);
 
                 scope.$on('jedi.activities.toggleMonitor', activitiesCtrl.toggle);
+
+                scope.$on('jedi.activities.refresh', activitiesCtrl.refresh);
 
                 scope.$on('jedi.activities.validateActivities', activitiesCtrl.validateActivities);
             },
@@ -357,10 +475,10 @@
                 }
 
                 function refresh() {
-                    //ToDo ?
                     $log.info("Atualizando lista de itens");
+                    scope.activityItems = activityItems;
                 }
-
+                
                 function close() {
                     element.addClass(hideClass);
                 }
