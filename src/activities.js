@@ -41,6 +41,9 @@
         minimizeLabel: 'Minimize',
         closeLabel: 'Close',
         successLabel: 'Success',
+        stopLabel: 'Stop',
+        detailLabel: 'Details',
+        resultLabel: 'Result',
         doneLabel: 'Done',
         errorLabel: 'Error',
         saveLabel: 'Save',
@@ -254,7 +257,7 @@
 
                 scope.$on('jedi.activities.validateActivities', activitiesCtrl.validateActivities);
             },
-            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', '$indexedDB', '$rootScope', '$http', function Controller(scope, attrs, element, $timeout, $log, $indexedDB, $rootScope, $http) {
+            controller: ['$scope', '$attrs', '$element', '$timeout', '$log', '$indexedDB', '$rootScope', '$http', '$window', 'jedi.dialogs.AlertHelper', function Controller(scope, attrs, element, $timeout, $log, $indexedDB, $rootScope, $http, $window, alertHelper) {
 
                 $log.info(activityItems.length);
 
@@ -264,9 +267,12 @@
                 };
 
                 vm.remove = remove;
-                vm.saveIconClick = saveIconClick;
+                vm.save = save;
                 vm.refresh = refresh;
                 vm.close = close;
+                vm.result = result;
+                vm.cancel = cancel;
+                vm.detail = detail;
                 vm.hasItemsToShow = hasItemsToShow;
                 vm.clearAll = clearAll;
                 vm.show = show;
@@ -302,7 +308,9 @@
                             var index = activityItems.indexOf(item);
                             activityItems.splice(index, 1);
                         }, function (error) {
-                            item.isRemoving = false; 
+                            item.isRemoving = false;
+                            $log.error("Erro ao remover atividade " + item.name);
+                            $log.error(error);
                         });
                     } else {
                         //Removing item from localStorage
@@ -324,13 +332,28 @@
                     return count;
                 }
 
-                function saveIconClick(item) {
+                function save(item) {
                     if (item.status != 'success' || item.isRemoving) {
                         return;
                     }
 
-                    $log.info("Salvando item " + item.name);
-                    saveAs(item.data, item.name);
+                    if (item.isAsync) {
+                        var request = {
+                            method: 'POST',
+                            url: item.baseUrl + '/' + item.downloadApiUrl,
+                            ignoreLoadingBar: true,
+                            showLoadingModal: false
+                        }
+
+                        $http.post(request).then(function (data) {
+                            $log.info("Salvando item async " + item.name);
+                            saveAs(data, item.name);
+                        }, function (error) { });
+                    }
+                    else {
+                        $log.info("Salvando item " + item.name);
+                        saveAs(item.data, item.name);
+                    }
                 }
 
                 function refresh() {
@@ -340,6 +363,38 @@
 
                 function close() {
                     element.addClass(hideClass);
+                }
+
+                function result(item) {
+                    if (item.resultUrl) {
+                        $window.open(item.resultUrl, '_blank');
+                    }
+                }
+
+                function detail(item) {
+                    if (item.resultUrl) {
+                        $window.open(item.detailsUrl, '_blank');
+                    }
+                }
+
+                function cancel(item) {
+                    alertHelper.confirm('Deseja realmente cancelar execução da atividade?', function () {
+                        $log.debug('Cancelando execução da atividade ' + item.name);
+
+                        var request = {
+                            method: 'POST',
+                            url: item.baseUrl + '/' + item.cancelApiUrl,
+                            ignoreLoadingBar: true,
+                            showLoadingModal: false
+                        }
+
+                        $http.post(request).then(function (data) {
+                            $log.info("Atividade " + item.name + " cancelada com sucesso");
+                        }, function (error) {
+                            $log.error("Erro ao cancelar atividade " + item.name);
+                            $log.error(error);
+                        });
+                    });
                 }
 
                 function hasItemsToShow() {
@@ -424,13 +479,17 @@
             '            <div class="row" ng-class="{\'is-removing\' : item.isRemoving}">' +
             '                <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">' +
             '                    <span>{{item.name}} - {{item.duration}}</span>' +
-            '                </div>' +
-            '                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">' +
             '                    <span class="activities-progress" ng-if="item.status == \'progress\'"><i class="fa fa-cog fa-spin"></i></span>' +
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'success\'" jd-i18n title="' + ActivitiesConfig.successLabel + '"></span>' +
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'done\'" jd-i18n title="' + ActivitiesConfig.doneLabel + '"></span>' +
             '                    <span class="activities-error glyphicon glyphicon-exclamation-sign" ng-if="item.status == \'error\'" jd-i18n title="' + ActivitiesConfig.errorLabel + '"></span>' +
-            '                    <span class="activities-inactive glyphicon glyphicon-save" ng-class="{\'activities-active\' : item.status == \'success\' }" jd-i18n title="' + ActivitiesConfig.saveLabel + '" ng-click="activitiesCtrl.saveIconClick(item)"></span>' +
+            '                    <span class="activities-error" ng-if="item.status == \'canceled\'" jd-i18n title="' + ActivitiesConfig.canceledLabel + '"><i class="fa fa-stop"></i></span>' +
+            '                </div>' +
+            '                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">' +
+            '                    <span class="activities-inactive glyphicon glyphicon-link" ng-if="item.status == \'done\' && item.resultUrl" ng-class="{\'activities-active\' : item.status == \'done\' }" jd-i18n title="' + ActivitiesConfig.resultLabel + '" ng-click="activitiesCtrl.result(item)"></span>' +
+            '                    <span class="activities-error glyphicon glyphicon-stop"    ng-if="item.status != \'done\' && item.cancelApiUrl" ng-class="{\'activities-inactive\' : item.status == \'done\' }" jd-i18n title="' + ActivitiesConfig.stopLabel + '" ng-click="activitiesCtrl.cancel(item)"></span>' +
+            '                    <span class="activities-active glyphicon glyphicon-search" ng-if="item.detailsUrl" jd-i18n title="' + ActivitiesConfig.detailLabel + '" ng-click="activitiesCtrl.detail(item)"></span>' +
+            '                    <span class="activities-inactive glyphicon glyphicon-save" ng-class="{\'activities-active\' : item.status == \'success\' || (item.status == \'done\' && item.downloadApiUrl) }" jd-i18n title="' + ActivitiesConfig.saveLabel + '" ng-click="activitiesCtrl.save(item)"></span>' +
             '                    <span class="activities-inactive glyphicon glyphicon-remove" ng-class="{\'activities-active\' : item.status != \'progress\' }" jd-i18n title="' + ActivitiesConfig.removeLabel + '" ng-click="activitiesCtrl.remove(item)"></span>' +
             '                </div>' +
             '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">' +

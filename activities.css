@@ -81,20 +81,20 @@
 }
 
 .fa-cog::before {
-    font-size: 18px;
+    font-size: 12px;
+}
+
+.fa-stop::before {
+    font-size: 12px;
+}
+
+.glyphicon-ok::before {
+    font-size: 12px;
 }
 
 .activities-active {
     cursor: pointer;
     opacity: 1;
-}
-
-.clear-all:hover {
-    border-bottom: 1px solid white;
-}
-
-.is-removing {
-    opacity: 0.5;
 }
 
 @-webkit-keyframes sk-circleFadeDelay {
