@@ -9,6 +9,10 @@
     box-shadow: -2px -2px 2px #808080;
     display: inline-block;
     overflow: hidden;
+    -webkit-transition: all 0.5s;
+    -moz-transition: all 0.5s;
+    -o-transition: all 0.5s;
+    transition: all 0.5s;
 }
 
     .animate-slide.minimizeMe {
@@ -77,7 +81,15 @@
 }
 
 .fa-cog::before {
-    font-size: 18px;
+    font-size: 12px;
+}
+
+.fa-stop::before {
+    font-size: 12px;
+}
+
+.glyphicon-ok::before {
+    font-size: 12px;
 }
 
 .activities-active {
