@@ -289,7 +289,7 @@
 
                     $log.info("Removendo item " + item.name);
 
-                    if (item.isAsync) {
+                    if (item.async) {
                         //Hiding Async item
                         var request = {
                             method: 'POST',
@@ -302,7 +302,7 @@
                             var index = activityItems.indexOf(item);
                             activityItems.splice(index, 1);
                         }, function (error) {
-
+                            item.isRemoving = false; 
                         });
                     } else {
                         //Removing item from localStorage
