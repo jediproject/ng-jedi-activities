@@ -169,7 +169,7 @@
         this.initAsyncActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin) {
 
             // Check if exists baseUrl in refresh APIs, Asynchronous activities must have a refresh url.
-            if (!interval && _.any(activitiesRefreshUrl, function (s) { return s.indexOf(baseUrl) !== -1; })) {
+            if (!interval && _.any(refreshServices, function (s) { return s.indexOf(baseUrl) !== -1; })) {
                 throw "Asynchronous activities must have a refresh url with the same baseUrl of activity. This must be set on loadAsyncActivities";
             }
 
