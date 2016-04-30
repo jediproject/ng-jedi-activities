@@ -315,8 +315,9 @@
         };
 
         this.cancelRefreshActivities = function cancelRefreshActivities() {
-            if (!interval) {
+            if (interval) {
                 $interval.cancel(interval);
+                interval = undefined;
             }
         };
 
