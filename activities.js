@@ -174,7 +174,7 @@
         this.initAsyncActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin) {
 
             // Check if exists baseUrl in refresh APIs, Asynchronous activities must have a refresh url.
-            if (!interval && _.any(activitiesRefreshUrl, function (s) { return s.indexOf(baseUrl) !== -1; })) {
+            if (!interval && _.any(refreshServices, function (s) { return s.indexOf(baseUrl) !== -1; })) {
                 throw "Asynchronous activities must have a refresh url with the same baseUrl of activity. This must be set on loadAsyncActivities";
             }
 
@@ -298,6 +298,10 @@
             };
         };
 
+        this.close = function close() {
+            $rootScope.$broadcast('jedi.activities.close');
+        };
+
         this.clearAll = function clearAll() {
             $rootScope.$broadcast('jedi.activities.clearAll');
         };
@@ -319,6 +323,11 @@
                 $interval.cancel(interval);
                 interval = undefined;
             }
+        };
+
+        this.cancelCloseRefreshActivities = function cancelCloseRefreshActivities() {
+            this.cancelRefreshActivities();
+            this.close();
         };
 
         this.hasInProgressActivities = function hasInProgressActivities() {
@@ -372,6 +381,8 @@
                         return $interpolate(ActivitiesConfig.inProgressWarning)(obj);
                     }
                 }
+
+                scope.$on('jedi.activities.close', activitiesCtrl.close);
 
                 scope.$on('jedi.activities.clearAll', activitiesCtrl.clearAll);
 

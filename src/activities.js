@@ -293,6 +293,10 @@
             };
         };
 
+        this.close = function close() {
+            $rootScope.$broadcast('jedi.activities.close');
+        };
+
         this.clearAll = function clearAll() {
             $rootScope.$broadcast('jedi.activities.clearAll');
         };
@@ -310,9 +314,15 @@
         };
 
         this.cancelRefreshActivities = function cancelRefreshActivities() {
-            if (!interval) {
+            if (interval) {
                 $interval.cancel(interval);
+                interval = undefined;
             }
+        };
+
+        this.cancelCloseRefreshActivities = function cancelCloseRefreshActivities() {
+            this.cancelRefreshActivities();
+            this.close();
         };
 
         this.hasInProgressActivities = function hasInProgressActivities() {
@@ -366,6 +376,8 @@
                         return $interpolate(ActivitiesConfig.inProgressWarning)(obj);
                     }
                 }
+
+                scope.$on('jedi.activities.close', activitiesCtrl.close);
 
                 scope.$on('jedi.activities.clearAll', activitiesCtrl.clearAll);
 
