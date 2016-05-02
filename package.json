@@ -1,6 +1,6 @@
 {
   "name": "ng-jedi-activities",
-  "version": "0.0.9",
+  "version": "0.1.3",
   "description": "Background tasks component written in angularjs",
   "repository": "https://github.com/jediproject/ng-jedi-activities",
   "license": "MIT",

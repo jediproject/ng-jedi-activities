@@ -269,15 +269,12 @@
 
                 // Create array of activities with request result
                 var activities = _.transform(result.data, function (ret, item, i) {
-                    ret.push({
-                        id: item.id,
-                        name: item.name,
-                        status: item.status,
+                    ret.push(_.extend({}, item, {
                         userLoginHash: CryptoJS.MD5(userLogin).toString(),
                         async: true,
                         initialDate: (new Date(item.initialDate)).getTime(),
                         baseUrl: baseUrl
-                    });
+                    }));
                 }, []);
 
                 // Add/Update/Delete activities result in activity array
@@ -425,7 +422,7 @@
 
                     $log.info("Removendo item " + item.name);
 
-                    if (item.async) {
+                    if (item.async && item.hideApiUrl) {
                         //Hiding Async item
                         var request = {
                             method: 'POST',
@@ -434,7 +431,7 @@
                             showLoadingModal: false
                         }
 
-                        $http.post(request).then(function (result) {
+                        $http(request).then(function (result) {
                             var index = activityItems.indexOf(item);
                             activityItems.splice(index, 1);
                         }, function (error) {
@@ -455,7 +452,7 @@
                 function getInProgressItemsCount() {
                     var count = 0;
                     angular.forEach(activityItems, function (item, index) {
-                        if (item.status === "progress" && (!item.async || (async && item.async))) {
+                        if (item.status === "progress" && !item.async) {
                             count++;
                         }
                     });
@@ -475,7 +472,7 @@
                             showLoadingModal: false
                         }
 
-                        $http.post(request).then(function (data) {
+                        $http(request).then(function (data) {
                             $log.info("Salvando item async " + item.name);
                             saveAs(data, item.name);
                         }, function (error) { });
@@ -490,7 +487,7 @@
                     $log.info("Atualizando lista de itens");
                     scope.activityItems = activityItems;
                 }
-                
+
                 function close() {
                     element.addClass(hideClass);
                 }
@@ -502,7 +499,7 @@
                 }
 
                 function detail(item) {
-                    if (item.resultUrl) {
+                    if (item.detailsUrl) {
                         $window.open(item.detailsUrl, '_blank');
                     }
                 }
@@ -518,7 +515,7 @@
                             showLoadingModal: false
                         }
 
-                        $http.post(request).then(function (data) {
+                        $http(request).then(function (data) {
                             $log.info("Atividade " + item.name + " cancelada com sucesso");
                         }, function (error) {
                             $log.error("Erro ao cancelar atividade " + item.name);
@@ -616,11 +613,11 @@
             '                    <span class="activities-error" ng-if="item.status == \'canceled\'" jd-i18n title="' + ActivitiesConfig.canceledLabel + '"><i class="fa fa-stop"></i></span>' +
             '                </div>' +
             '                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">' +
-            '                    <span class="activities-inactive glyphicon glyphicon-link" ng-if="item.status == \'done\' && item.resultUrl" ng-class="{\'activities-active\' : item.status == \'done\' }" jd-i18n title="' + ActivitiesConfig.resultLabel + '" ng-click="activitiesCtrl.result(item)"></span>' +
-            '                    <span class="activities-error glyphicon glyphicon-stop"    ng-if="item.status != \'done\' && item.cancelApiUrl" ng-class="{\'activities-inactive\' : item.status == \'done\' }" jd-i18n title="' + ActivitiesConfig.stopLabel + '" ng-click="activitiesCtrl.cancel(item)"></span>' +
-            '                    <span class="activities-active glyphicon glyphicon-search" ng-if="item.detailsUrl" jd-i18n title="' + ActivitiesConfig.detailLabel + '" ng-click="activitiesCtrl.detail(item)"></span>' +
-            '                    <span class="activities-inactive glyphicon glyphicon-save" ng-class="{\'activities-active\' : item.status == \'success\' || (item.status == \'done\' && item.downloadApiUrl) }" jd-i18n title="' + ActivitiesConfig.saveLabel + '" ng-click="activitiesCtrl.save(item)"></span>' +
-            '                    <span class="activities-inactive glyphicon glyphicon-remove" ng-class="{\'activities-active\' : item.status != \'progress\' }" jd-i18n title="' + ActivitiesConfig.removeLabel + '" ng-click="activitiesCtrl.remove(item)"></span>' +
+            '                    <span class="activities-inactive glyphicon glyphicon-link"   ng-if="item.status == \'done\' && item.resultUrl" ng-class="{\'activities-active\' : item.status == \'done\' }" jd-i18n title="' + ActivitiesConfig.resultLabel + '" ng-click="activitiesCtrl.result(item)"></span>' +
+            '                    <span class="activities-error glyphicon glyphicon-stop"      ng-class="{\'activities-active\' : item.status != \'done\' && (!item.async || (item.async && item.cancelApiUrl))}" jd-i18n title="' + ActivitiesConfig.stopLabel + '" ng-click="activitiesCtrl.cancel(item)"></span>' +
+            '                    <span class="activities-active glyphicon glyphicon-search"   ng-if="item.detailsUrl" jd-i18n title="' + ActivitiesConfig.detailLabel + '" ng-click="activitiesCtrl.detail(item)"></span>' +
+            '                    <span class="activities-inactive glyphicon glyphicon-save"   ng-class="{\'activities-active\' : (!item.async && item.status == \'success\') || (item.async && item.status == \'done\' && item.downloadApiUrl) }" jd-i18n title="' + ActivitiesConfig.saveLabel + '" ng-click="activitiesCtrl.save(item)"></span>' +
+            '                    <span class="activities-inactive glyphicon glyphicon-remove" ng-class="{\'activities-active\' : item.status != \'progress\' && (!item.async || (item.async && item.hideApiUrl)) }" jd-i18n title="' + ActivitiesConfig.removeLabel + '" ng-click="activitiesCtrl.remove(item)"></span>' +
             '                </div>' +
             '                <div class="col-md-1 col-xs-1 col-sm-1 col-lg-1">' +
             '                </div>' +
