@@ -1,5 +1,5 @@
 /*
- ng-jedi-activities v0.1.3
+ ng-jedi-activities v0.1.4
  Background tasks component written in angularjs
  https://github.com/jediproject/ng-jedi-activities
 */
@@ -470,6 +470,9 @@
                     }
 
                     if (item.isAsync) {
+                        if (!item.downloadApiUrl) {
+                            return;
+                        }
                         var request = {
                             method: 'POST',
                             url: item.baseUrl + '/' + item.downloadApiUrl,
@@ -510,6 +513,9 @@
                 }
 
                 function cancel(item) {
+                    if (item.isRemoving || !item.cancelApiUrl) {
+                        return;
+                    }
                     alertHelper.confirm('Deseja realmente cancelar execução da atividade?', function () {
                         $log.debug('Cancelando execução da atividade ' + item.name);
 
@@ -619,7 +625,7 @@
             '                </div>' +
             '                <div class="col-md-3 col-xs-3 col-sm-3 col-lg-3 text-right">' +
             '                    <span class="activities-inactive glyphicon glyphicon-link"   ng-if="item.status == \'done\' && item.resultUrl" ng-class="{\'activities-active\' : item.status == \'done\' }" jd-i18n title="' + ActivitiesConfig.resultLabel + '" ng-click="activitiesCtrl.result(item)"></span>' +
-            '                    <span class="activities-error glyphicon glyphicon-stop"      ng-class="{\'activities-active\' : item.status != \'done\' && (!item.async || (item.async && item.cancelApiUrl))}" jd-i18n title="' + ActivitiesConfig.stopLabel + '" ng-click="activitiesCtrl.cancel(item)"></span>' +
+            '                    <span class="activities-error glyphicon glyphicon-stop"      ng-if="item.status != \'done\' && item.status != \'success\'" ng-class="{\'activities-active\' : ((item.status != \'done\' && !item.async) || (item.status != \'success\' &&item.async && item.cancelApiUrl))}" jd-i18n title="' + ActivitiesConfig.stopLabel + '" ng-click="activitiesCtrl.cancel(item)"></span>' +
             '                    <span class="activities-active glyphicon glyphicon-search"   ng-if="item.detailsUrl" jd-i18n title="' + ActivitiesConfig.detailLabel + '" ng-click="activitiesCtrl.detail(item)"></span>' +
             '                    <span class="activities-inactive glyphicon glyphicon-save"   ng-class="{\'activities-active\' : (!item.async && item.status == \'success\') || (item.async && item.status == \'done\' && item.downloadApiUrl) }" jd-i18n title="' + ActivitiesConfig.saveLabel + '" ng-click="activitiesCtrl.save(item)"></span>' +
             '                    <span class="activities-inactive glyphicon glyphicon-remove" ng-class="{\'activities-active\' : item.status != \'progress\' && (!item.async || (item.async && item.hideApiUrl)) }" jd-i18n title="' + ActivitiesConfig.removeLabel + '" ng-click="activitiesCtrl.remove(item)"></span>' +
