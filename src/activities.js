@@ -53,9 +53,7 @@
     var upsert = function (arr, key, newval) {
         if (_.any(arr, key)) {
             var item = _.find(arr, key);
-            //var index = _.indexOf(arr, item);
             _.merge(item, newval)
-            //arr.splice(index, 1, item);
         } else {
             arr.push(newval);
         }
@@ -93,17 +91,6 @@
 
         this.initActivity = function (baseUrl, apiUrl, method, params, activityName, userLogin, respType) {
 
-            var timeout;
-            var duration = moment.duration();
-
-            var onTimeout = function () {
-                duration.add(1, 's');
-                activityItem.duration = "(" + (duration.hours() ? duration.hours() + ':' : '') + ('0' + duration.minutes()).slice(-2) + ':' + ('0' + duration.seconds()).slice(-2) + ")";
-                if (activityItem.status === 'progress') {
-                    timeout = $timeout(onTimeout, 1000);
-                }
-            };
-
             var activityItem = {
                 id: guid(),
                 name: activityName,
@@ -125,7 +112,7 @@
                 showLoadingModal: false
             };
 
-            $timeout(onTimeout);
+            $timeout(clock(activityItem));
 
             var httpPromise = $http(request).success(function (data, status, headers, config) {
 
@@ -173,17 +160,6 @@
                 throw "Asynchronous activities must have a refresh url with the same baseUrl of activity. This must be set on loadAsyncActivities";
             }
 
-            var timeout;
-            var duration = moment.duration();
-
-            var onTimeout = function () {
-                duration.add(1, 's');
-                activityItem.duration = "(" + (duration.hours() ? duration.hours() + ':' : '') + ('0' + duration.minutes()).slice(-2) + ':' + ('0' + duration.seconds()).slice(-2) + ")";
-                if (activityItem.status === 'progress') {
-                    timeout = $timeout(onTimeout, 1000);
-                }
-            };
-
             var activityItem = {
                 id: guid(),
                 name: activityName,
@@ -205,23 +181,22 @@
                 showLoadingModal: false
             };
 
-            $timeout(onTimeout);
+            $timeout(clock(activityItem));
 
             // Asynchronous activities just return on init when error. 
             var httpPromise = $http(request).success(function (result) {
-                if (result.data) {
+                if (result) {
                     upsert(activityItems,
                     function (item) {
-                        return result.data.id === item.id
+                        return activityItem.id === item.id
                     },
-                    result.data);
+                    result);
                     refresh();
                 }
             }).error(function (result, status) {
-                activityItem.status = 'error';
-                activityItem.data = null;
-
-                insertToIndexedDb(activityItem);
+                _.remove(activityItems, function (item) {
+                    return activityItem.id === item.id
+                });
             });
 
             return $q.when(
@@ -237,7 +212,7 @@
         };
 
         this.loadAsyncActivities = function (baseUrl, apiRefreshUrl, method, params, userLogin) {
-
+           
             // Create request
             var request = {
                 method: method.toUpperCase(),
@@ -279,6 +254,13 @@
 
                 // Add/Update/Delete activities result in activity array
                 updateArray(activityItems, activities);
+                
+                // Create duration when retrieved from backend
+                _.forEach(activityItems, function(activityItem, key) {            
+                    if(!activityItem.duration && activityItem.initialDate){
+                        $timeout(clock(activityItem));
+                    }
+                }); 
 
                 // Order activities
                 activityItems = _.sortByOrder(activityItems, ['initialDate'], ['desc']);
@@ -289,6 +271,25 @@
                 throw "Error when getting activities from server."
             };
         };
+        
+        function clock(activityItem){
+            var timeout;
+            var duration = moment.duration();
+            
+            if(activityItem.initialDate){
+                var diff = Date.now() - new Date(activityItem.initialDate);
+                duration.add(diff, 'ms');
+            }
+            
+            var onTimeout = function () {
+                duration.add(1, 's');
+                activityItem.duration = "(" + (duration.hours() ? duration.hours() + ':' : '') + ('0' + duration.minutes()).slice(-2) + ':' + ('0' + duration.seconds()).slice(-2) + ")";
+                if (activityItem.status === 'progress') {
+                    timeout = $timeout(onTimeout, 1000);
+                }
+            };
+            return onTimeout;
+        }
 
         this.close = function close() {
             $rootScope.$broadcast('jedi.activities.close');
@@ -414,7 +415,7 @@
                 }
 
                 function remove(item) {
-                    if (item.status == 'progress' || item.isRemoving) {
+                    if (item.status === 'progress' || (item.async && !item.hideApiUrl) || item.isRemoving) {
                         return;
                     }
 
