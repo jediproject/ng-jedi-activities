@@ -74,6 +74,7 @@
         minimizeLabel: 'Minimize',
         closeLabel: 'Close',
         successLabel: 'Success',
+        waitingLabel: 'Waiting',
         stopLabel: 'Stop',
         detailLabel: 'Details',
         resultLabel: 'Result',
@@ -98,7 +99,7 @@
                 duration: '(00:00)',
                 userLoginHash: CryptoJS.MD5(userLogin).toString(),
                 async: false,
-                initialDate: Date.now()
+                startDate: Date.now()
             };
 
             activityItems.unshift(activityItem);
@@ -144,7 +145,6 @@
             return $q.when(
                 httpPromise.then(function (response) {
                     return {
-                        duration: duration.asMilliseconds(),
                         name: activityItem.name,
                         data: activityItem.data,
                         status: activityItem.status
@@ -163,11 +163,11 @@
             var activityItem = {
                 id: guid(),
                 name: activityName,
-                status: 'progress',
-                duration: '(00:00)',
+                status: 'waitingprocess',
+                duration: '',
                 userLoginHash: CryptoJS.MD5(userLogin).toString(),
                 async: true,
-                initialDate: Date.now(),
+                startDate: Date.now(),
                 baseUrl: baseUrl
             };
 
@@ -181,17 +181,17 @@
                 showLoadingModal: false
             };
 
-            $timeout(clock(activityItem));
-
-            // Asynchronous activities just return on init when error. 
+            // Asynchronous activities just return on init when error.
             var httpPromise = $http(request).success(function (result) {
                 if (result) {
+                    result.duration = '(00:00)'
                     upsert(activityItems,
                     function (item) {
                         return activityItem.id === item.id
                     },
                     result);
-                    refresh();
+                    $timeout(clock(activityItem));
+                    $this.refresh()
                 }
             }).error(function (result, status) {
                 _.remove(activityItems, function (item) {
@@ -202,7 +202,6 @@
             return $q.when(
                 httpPromise.then(function (response) {
                     return {
-                        duration: duration.asMilliseconds(),
                         name: activityItem.name,
                         data: activityItem.data,
                         status: activityItem.status
@@ -212,7 +211,7 @@
         };
 
         this.loadAsyncActivities = function (baseUrl, apiRefreshUrl, method, params, userLogin) {
-           
+
             // Create request
             var request = {
                 method: method.toUpperCase(),
@@ -247,23 +246,23 @@
                     ret.push(_.extend({}, item, {
                         userLoginHash: CryptoJS.MD5(userLogin).toString(),
                         async: true,
-                        initialDate: (new Date(item.initialDate)).getTime(),
+                        startDate: (new Date(item.startDate)).getTime(),
                         baseUrl: baseUrl
                     }));
                 }, []);
 
                 // Add/Update/Delete activities result in activity array
                 updateArray(activityItems, activities);
-                
+
                 // Create duration when retrieved from backend
-                _.forEach(activityItems, function(activityItem, key) {            
-                    if(!activityItem.duration && activityItem.initialDate){
+                _.forEach(activityItems, function(activityItem, key) {
+                    if((!activityItem.duration || activityItem.duration === '(00:00)') && activityItem.startDate){
                         $timeout(clock(activityItem));
                     }
-                }); 
+                });
 
                 // Order activities
-                activityItems = _.sortByOrder(activityItems, ['initialDate'], ['desc']);
+                activityItems = _.sortByOrder(activityItems, ['startDate'], ['desc']);
                 $this.refresh();
 
             };
@@ -271,20 +270,20 @@
                 throw "Error when getting activities from server."
             };
         };
-        
+
         function clock(activityItem){
             var timeout;
             var duration = moment.duration();
-            
-            if(activityItem.initialDate){
-                var diff = Date.now() - new Date(activityItem.initialDate);
+
+            if(activityItem.startDate){
+                var diff = (activityItem.endDate ? new Date(activityItem.endDate) : Date.now()) - new Date(activityItem.startDate);
                 duration.add(diff, 'ms');
             }
-            
+
             var onTimeout = function () {
-                duration.add(1, 's');
                 activityItem.duration = "(" + (duration.hours() ? duration.hours() + ':' : '') + ('0' + duration.minutes()).slice(-2) + ':' + ('0' + duration.seconds()).slice(-2) + ")";
                 if (activityItem.status === 'progress') {
+                    duration.add(1, 's');
                     timeout = $timeout(onTimeout, 1000);
                 }
             };
@@ -613,6 +612,7 @@
             '            <div class="row" ng-class="{\'is-removing\' : item.isRemoving}">' +
             '                <div class="col-md-9 col-xs-9 col-sm-9 col-lg-9 activities-content">' +
             '                    <span>{{item.name}} {{item.duration}}</span>' +
+            '                    <span class="activities-waitingprocess glyphicon glyphicon-time" ng-if="item.status == \'waitingprocess\'" jd-i18n title="' + ActivitiesConfig.waitingLabel + '"></span>' +
             '                    <span class="activities-progress" ng-if="item.status == \'progress\'"><i class="fa fa-cog fa-spin"></i></span>' +
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'success\'" jd-i18n title="' + ActivitiesConfig.successLabel + '"></span>' +
             '                    <span class="activities-done glyphicon glyphicon-ok" ng-if="item.status == \'done\'" jd-i18n title="' + ActivitiesConfig.doneLabel + '"></span>' +
