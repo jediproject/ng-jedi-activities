@@ -1,3 +1,8 @@
+/*
+ ng-jedi-activities v0.1.7
+ Background tasks component written in angularjs
+ https://github.com/jediproject/ng-jedi-activities
+*/
 (function (factory) {
     if (typeof define === 'function') {
         define(['angular', 'moment', 'file-saver-saveas-js', 'angular-indexed-db'], factory);
@@ -256,8 +261,11 @@
 
                 // Create duration when retrieved from backend
                 _.forEach(activityItems, function(activityItem, key) {
-                    if((!activityItem.duration || activityItem.duration === '(00:00)') && activityItem.startDate){
+                    if((!activityItem.duration || activityItem.duration === '(00:00)') && activityItem.startDate && activityItem.status !== 'waitingprocess'){
                         $timeout(clock(activityItem));
+                    }
+                    else if (activityItem.status === 'waitingprocess'){
+                        activityItem.duration = '';
                     }
                 });
 
@@ -292,6 +300,10 @@
 
         this.close = function close() {
             $rootScope.$broadcast('jedi.activities.close');
+        };
+
+        this.show = function show() {
+            $rootScope.$broadcast('jedi.activities.show');
         };
 
         this.clearAll = function clearAll() {
@@ -375,6 +387,8 @@
                 }
 
                 scope.$on('jedi.activities.close', activitiesCtrl.close);
+
+                scope.$on('jedi.activities.show', activitiesCtrl.show);
 
                 scope.$on('jedi.activities.clearAll', activitiesCtrl.clearAll);
 
