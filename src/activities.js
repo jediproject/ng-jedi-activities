@@ -113,6 +113,7 @@
                 method: method.toUpperCase(),
                 url: baseUrl + '/' + apiUrl,
                 data: params,
+                params: (method.trim().toLowerCase() === 'get') ? params : undefined,
                 responseType: respType ? respType : 'arraybuffer',
                 ignoreLoadingBar: true,
                 showLoadingModal: false
@@ -182,6 +183,7 @@
                 method: method.toUpperCase(),
                 url: baseUrl + '/' + apiUrl,
                 data: params,
+                params: (method.trim().toLowerCase() === 'get') ? params : undefined,
                 ignoreLoadingBar: true,
                 showLoadingModal: false
             };
@@ -222,6 +224,7 @@
                 method: method.toUpperCase(),
                 url: baseUrl + '/' + apiRefreshUrl,
                 data: params,
+                params: (method.trim().toLowerCase() === 'get') ? params : undefined,
                 responseType: 'json',
                 ignoreLoadingBar: true,
                 showLoadingModal: false
